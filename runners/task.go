@@ -118,7 +118,12 @@ func (c *taskExec) updates() error {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	return c.prt.itr.Update(c.job)
+	return c.prt.itr.Update(&UpdateJobInfo{
+		Id:       c.job.Id,
+		Status:   c.job.Status,
+		Error:    c.job.Error,
+		ExitCode: c.job.ExitCode,
+	})
 }
 func (c *taskExec) checkStop() bool {
 

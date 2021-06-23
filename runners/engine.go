@@ -34,20 +34,17 @@ func (c *Engine) Start(ctx context.Context) error {
 	if c.itr == nil {
 		return errors.New("execute is nil")
 	}
-	if c.cfg.Name == "" {
+	/*if c.cfg.Name == "" {
 		return errors.New("config server name is empty.")
-	}
-	if c.cfg.Workspace == "" {
-		return errors.New("config workspace is empty.")
 	}
 	if len(c.cfg.Name) > 20 {
 		return errors.New("config server name is too long than 20.")
+	}*/
+	if c.cfg.Workspace == "" {
+		return errors.New("config workspace is empty.")
 	}
 	if c.cfg.Limit <= 0 {
 		c.cfg.Limit = 50
-	}
-	if c.cfg.ServAddr == "" {
-		return errors.New("config server addr is empty.please set by '--addr'")
 	}
 	if len(c.cfg.Plugin) <= 0 {
 		return errors.New("plugins is empty(please see --help)")
