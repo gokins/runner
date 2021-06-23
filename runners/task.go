@@ -138,4 +138,5 @@ func (c *taskExec) runJob() {
 		}
 	}()
 
+	c.status(common.BuildStatusOk, "")
 }

@@ -57,7 +57,7 @@ func (c *Engine) Start(ctx context.Context) error {
 	go func() {
 		for !c.Stopd() {
 			c.run()
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Millisecond * 100)
 		}
 	}()
 	return nil
