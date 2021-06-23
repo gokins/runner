@@ -3,15 +3,16 @@ package runners
 import (
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/runtime"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
 )
 
 type taskExec struct {
@@ -49,8 +50,6 @@ func (c *taskExec) run() {
 	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, common.PathBuild, c.job.BuildId)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 	c.jobpth = filepath.Join(c.wrkpth, common.PathJobs, c.job.Id)
-	os.RemoveAll(c.jobpth)
-	os.MkdirAll(c.jobpth, 0750)
 
 	c.cmdend = false
 	c.bngtm = time.Now()
@@ -58,6 +57,8 @@ func (c *taskExec) run() {
 		c.endtm = time.Now()
 		os.RemoveAll(c.jobpth)
 	}()
+	os.RemoveAll(c.jobpth)
+	os.MkdirAll(c.jobpth, 0750)
 	err := c.check()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check err:%v", err))
@@ -67,11 +68,11 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusError, "manual stop!!")
 		goto ends
 	}
-	/*err=c.getrepo()
+	err = c.checkRepo()
 	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("check err:%v", err))
+		c.status(common.BuildStatusError, fmt.Sprintf("check repo err:%v", err))
 		goto ends
-	}*/
+	}
 	c.status(common.BuildStatusRunning, "")
 	c.update()
 	go c.runJob()
@@ -95,6 +96,19 @@ func (c *taskExec) check() error {
 		return errors.New("build Job name is empty")
 	}
 	return nil
+}
+func (c *taskExec) checkRepo() error {
+	stat, err := os.Stat(c.repopth)
+	if err == nil {
+		if stat.IsDir() {
+			return nil
+		} else {
+			return errors.New("repo path is not dir")
+		}
+	} /* else {
+		//download
+	} */
+	return errors.New("mores")
 }
 func (c *taskExec) update() {
 	for {
@@ -141,12 +155,8 @@ func (c *taskExec) runJob() {
 	c.cmd = &cmdExec{prt: c, envs: envs}
 	err := c.cmd.start()
 	if err != nil {
-		/*c.pushLogjson(&hbtpBean.CmdLogLineJson{
-			Id: utils.NewXid(),
-			Type: hbtpBean.TypeCmdLogLineCmderr,
-			//Name: "get depend artifact err",
-			Content: fmt.Sprintf("command start err:%v",err),
-		})*/
+		c.status(common.BuildStatusError, err.Error())
+		return
 	}
 	if c.job.Status != common.BuildStatusOk {
 		logrus.Errorf("cmdExec start err(%d):%s", c.job.ExitCode, c.job.Error)
