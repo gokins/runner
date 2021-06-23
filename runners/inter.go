@@ -11,4 +11,5 @@ type UpdateJobInfo struct {
 type IExecute interface {
 	PullJob(plugs []string) (*runtime.Step, error)
 	Update(m *UpdateJobInfo) error
+	CheckCancel(buildId string) bool
 }

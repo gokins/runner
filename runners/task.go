@@ -63,10 +63,10 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusError, fmt.Sprintf("check err:%v", err))
 		goto ends
 	}
-	/*if c.checkStop() {
+	if c.checkStop() {
 		c.status(common.BuildStatusError, "manual stop!!")
 		goto ends
-	}*/
+	}
 	/*err=c.getrepo()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check err:%v", err))
@@ -126,8 +126,7 @@ func (c *taskExec) updates() error {
 	})
 }
 func (c *taskExec) checkStop() bool {
-
-	return false
+	return c.prt.itr.CheckCancel(c.job.BuildId)
 }
 func (c *taskExec) runJob() {
 	defer func() {
@@ -137,6 +136,22 @@ func (c *taskExec) runJob() {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
+
+	var envs map[string]string
+	c.cmd = &cmdExec{prt: c, envs: envs}
+	err := c.cmd.start()
+	if err != nil {
+		/*c.pushLogjson(&hbtpBean.CmdLogLineJson{
+			Id: utils.NewXid(),
+			Type: hbtpBean.TypeCmdLogLineCmderr,
+			//Name: "get depend artifact err",
+			Content: fmt.Sprintf("command start err:%v",err),
+		})*/
+	}
+	if c.job.Status != common.BuildStatusOk {
+		logrus.Errorf("cmdExec start err(%d):%s", c.job.ExitCode, c.job.Error)
+		return
+	}
 
 	c.status(common.BuildStatusOk, "")
 }
