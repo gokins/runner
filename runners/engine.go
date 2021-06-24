@@ -88,7 +88,7 @@ func (c *Engine) run() {
 
 	job, err := c.itr.PullJob(c.cfg.Plugin)
 	if err != nil {
-		logrus.Debugf("not pull job:%v", err)
+		//logrus.Debugf("not pull job:%v", err)
 		return
 	}
 
