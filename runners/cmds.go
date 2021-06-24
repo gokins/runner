@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
@@ -79,14 +78,13 @@ func (c *cmdExec) start() error {
 		}
 	}()
 
-	c.prt.Status = common.BuildStatusError
-
-	cmderr := make(chan error)
+	var cmderr error
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		cmderr <- c.runCmd()
+		cmderr = c.runCmd()
+		logrus.Debugf("runCmd end!!!!")
 	}()
 	wg.Add(1)
 	go func() {
@@ -95,6 +93,7 @@ func (c *cmdExec) start() error {
 		for !hbtp.EndContext(c.prt.prt.ctx) && !c.runReadErr(linebuf) {
 			time.Sleep(time.Millisecond)
 		}
+		logrus.Debugf("runReadErr end!!!!")
 	}()
 	wg.Add(1)
 	go func() {
@@ -103,6 +102,7 @@ func (c *cmdExec) start() error {
 		for !hbtp.EndContext(c.prt.prt.ctx) && !c.runReadOut(linebuf) {
 			time.Sleep(time.Millisecond)
 		}
+		logrus.Debugf("runReadOut end!!!!")
 	}()
 
 	for !hbtp.EndContext(c.prt.prt.ctx) && !c.cmdend {
@@ -113,7 +113,7 @@ func (c *cmdExec) start() error {
 		}
 	}
 	wg.Wait()
-	return <-cmderr
+	return cmderr
 }
 
 func (c *cmdExec) writeEnvs(k, v string) {
@@ -143,12 +143,6 @@ func (c *cmdExec) cmdWriteString(s string) {
 func (c *cmdExec) runCmd() error {
 	defer func() {
 		c.cmdend = true
-		/*if c.cmdind >= 0 && c.cmdind < len(c.cmds) {
-			it := c.cmds[c.cmdind]
-			m.Gid = it.Gid
-			m.Pid = it.Id
-			//m.Name = it.name
-		}*/
 		if err := recover(); err != nil {
 			logrus.Warnf("cmdExec runCmd recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
@@ -210,7 +204,7 @@ func (c *cmdExec) runCmd() error {
 	if cmd.ProcessState != nil {
 		c.prt.ExitCode = cmd.ProcessState.ExitCode()
 	}
-	logrus.Debugf("job %s cmd end code:%d", c.prt.job.Name, c.prt.ExitCode)
+	logrus.Debugf("job '%s' cmd end code:%d", c.prt.job.Name, c.prt.ExitCode)
 	time.Sleep(time.Second)
 	if err != nil || c.prt.ExitCode != 0 {
 		//c.job.Status = common.BUILD_STATUS_ERROR

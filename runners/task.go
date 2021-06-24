@@ -164,9 +164,11 @@ func (c *taskExec) runJob() {
 	}
 
 	stat, err := os.Stat(c.repopth)
-	if err == nil && !stat.IsDir() {
-		c.status(common.BuildStatusError, "repo path err")
-		return
+	if err == nil {
+		if !stat.IsDir() {
+			c.status(common.BuildStatusError, "repo path err")
+			return
+		}
 	} else {
 		os.MkdirAll(c.repopth, 0750)
 		defer os.RemoveAll(c.repopth)
@@ -183,7 +185,7 @@ func (c *taskExec) runJob() {
 		c.status(common.BuildStatusError, err.Error())
 		return
 	}
-	if c.Status != common.BuildStatusOk {
+	if c.Status == common.BuildStatusError {
 		logrus.Debugf("cmdExec start err(%d):%s", c.ExitCode, c.Error)
 		return
 	}
