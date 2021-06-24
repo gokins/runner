@@ -159,7 +159,7 @@ func (c *taskExec) runJob() {
 		return
 	}
 	if c.job.Status != common.BuildStatusOk {
-		logrus.Errorf("cmdExec start err(%d):%s", c.job.ExitCode, c.job.Error)
+		logrus.Debugf("cmdExec start err(%d):%s", c.job.ExitCode, c.job.Error)
 		return
 	}
 
