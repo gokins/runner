@@ -1,6 +1,7 @@
 package runners
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -10,34 +11,38 @@ import (
 	"time"
 
 	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )
 
 type taskExec struct {
 	sync.RWMutex
-	prt *Engine
-	job *runtime.Step
+	prt      *Engine
+	job      *RunJob
+	Status   string `yaml:"status"`
+	Event    string `yaml:"event"`
+	Error    string `yaml:"error,omitempty"`
+	ExitCode int    `yaml:"exit_code"`
 
 	bngtm time.Time
 	endtm time.Time
 
 	wrkpth  string //工作地址
 	repopth string //仓库地址
-	jobpth  string //仓库地址
 
-	cmd    *cmdExec
-	cmdend bool
+	cmdctx  context.Context
+	cmdcncl context.CancelFunc
+	cmd     *cmdExec
+	cmdend  bool
 }
 
 func (c *taskExec) status(stat, errs string, event ...string) {
 	c.Lock()
 	defer c.Unlock()
-	c.job.Status = stat
-	c.job.Error = errs
+	c.Status = stat
+	c.Error = errs
 	if len(event) > 0 {
-		c.job.Event = event[0]
+		c.Event = event[0]
 	}
 }
 func (c *taskExec) run() {
@@ -49,30 +54,27 @@ func (c *taskExec) run() {
 	}()
 	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, common.PathBuild, c.job.BuildId)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
-	c.jobpth = filepath.Join(c.wrkpth, common.PathJobs, c.job.Id)
 
 	c.cmdend = false
 	c.bngtm = time.Now()
 	defer func() {
 		c.endtm = time.Now()
-		os.RemoveAll(c.jobpth)
 	}()
-	os.RemoveAll(c.jobpth)
-	os.MkdirAll(c.jobpth, 0750)
 	err := c.check()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check err:%v", err))
 		goto ends
 	}
 	if c.checkStop() {
-		c.status(common.BuildStatusError, "manual stop!!")
+		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	err = c.checkRepo()
+	/*err = c.checkRepo()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check repo err:%v", err))
 		goto ends
-	}
+	}*/
+	c.cmdctx, c.cmdcncl = context.WithCancel(c.prt.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
 	go c.runJob()
@@ -86,8 +88,13 @@ ends:
 	c.update()
 }
 func (c *taskExec) stop() {
+	c.status(common.BuildStatusCancel, "manual stop!!")
 	if c.cmd != nil {
 		c.cmd.stop()
+	}
+	if c.cmdcncl != nil {
+		c.cmdcncl()
+		c.cmdcncl = nil
 	}
 }
 func (c *taskExec) check() error {
@@ -134,9 +141,9 @@ func (c *taskExec) updates() error {
 	}()
 	return c.prt.itr.Update(&UpdateJobInfo{
 		Id:       c.job.Id,
-		Status:   c.job.Status,
-		Error:    c.job.Error,
-		ExitCode: c.job.ExitCode,
+		Status:   c.Status,
+		Error:    c.Error,
+		ExitCode: c.ExitCode,
 	})
 }
 func (c *taskExec) checkStop() bool {
@@ -151,15 +158,33 @@ func (c *taskExec) runJob() {
 		}
 	}()
 
+	if len(c.job.Commands) <= 0 {
+		c.status(common.BuildStatusError, "not found any commands")
+		return
+	}
+
+	stat, err := os.Stat(c.repopth)
+	if err == nil && !stat.IsDir() {
+		c.status(common.BuildStatusError, "repo path err")
+		return
+	} else {
+		os.MkdirAll(c.repopth, 0750)
+		defer os.RemoveAll(c.repopth)
+	}
+
 	var envs map[string]string
-	c.cmd = &cmdExec{prt: c, envs: envs}
-	err := c.cmd.start()
+	c.cmd = &cmdExec{
+		prt:  c,
+		envs: envs,
+		cmds: c.job.Commands,
+	}
+	err = c.cmd.start()
 	if err != nil {
 		c.status(common.BuildStatusError, err.Error())
 		return
 	}
-	if c.job.Status != common.BuildStatusOk {
-		logrus.Debugf("cmdExec start err(%d):%s", c.job.ExitCode, c.job.Error)
+	if c.Status != common.BuildStatusOk {
+		logrus.Debugf("cmdExec start err(%d):%s", c.ExitCode, c.Error)
 		return
 	}
 
