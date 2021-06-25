@@ -69,6 +69,12 @@ func (c *Engine) Stop() {
 	if c.cncl != nil {
 		c.cncl()
 	}
+
+	c.linelk.RLock()
+	defer c.linelk.RUnlock()
+	for _, v := range c.lines {
+		v.stop()
+	}
 }
 func (c *Engine) run() {
 	defer func() {

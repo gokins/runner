@@ -88,7 +88,6 @@ ends:
 	c.update()
 }
 func (c *taskExec) stop() {
-	c.status(common.BuildStatusCancel, "manual stop!!")
 	if c.cmd != nil {
 		c.cmd.stop()
 	}
@@ -182,13 +181,17 @@ func (c *taskExec) runJob() {
 	}
 	err = c.cmd.start()
 	if err != nil {
-		c.status(common.BuildStatusError, err.Error())
-		return
-	}
-	if c.Status == common.BuildStatusError {
-		logrus.Debugf("cmdExec start err(%d):%s", c.ExitCode, c.Error)
+		if hbtp.EndContext(c.cmdctx) {
+			c.status(common.BuildStatusCancel, err.Error())
+		} else {
+			c.status(common.BuildStatusError, err.Error())
+		}
 		return
 	}
 
+	/*if c.Status != common.BuildStatusOk {
+		logrus.Debugf("cmdExec start err(%d):%s", c.ExitCode, c.Error)
+		return
+	}*/
 	c.status(common.BuildStatusOk, "")
 }
