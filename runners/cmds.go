@@ -357,7 +357,8 @@ fi
 }
 func (c *cmdExec) pushCmdLine(bs string, iserr bool) {
 	cmdid := ""
-	if c.cmdind >= 0 {
+	ln := len(c.cmds)
+	if c.cmdind >= 0 && c.cmdind < ln {
 		it := c.cmds[c.cmdind]
 		cmdid = it.Id
 	}
