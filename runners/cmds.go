@@ -229,7 +229,9 @@ func (c *cmdExec) runReadErr(linebuf *bytes.Buffer) bool {
 		if linebuf.Len() <= 0 {
 			return true
 		}
-		linebuf.WriteByte('\n')
+		//linebuf.WriteByte('\n')
+		bts[0] = '\n'
+		rn = 1
 		err = nil
 	}
 	if err != nil {
