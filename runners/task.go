@@ -69,11 +69,6 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	/*err = c.checkRepo()
-	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("check repo err:%v", err))
-		goto ends
-	}*/
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.prt.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
@@ -104,17 +99,24 @@ func (c *taskExec) check() error {
 	return nil
 }
 func (c *taskExec) checkRepo() error {
+	if !c.job.IsClone {
+		stat, err := os.Stat(c.job.RepoPath)
+		if err == nil && stat.IsDir() {
+			c.repopth = c.job.RepoPath
+		}
+	}
 	stat, err := os.Stat(c.repopth)
 	if err == nil {
 		if stat.IsDir() {
 			return nil
 		} else {
-			return errors.New("repo path is not dir")
+			return errors.New("path is not dir")
 		}
 	} /* else {
-		//download
-	} */
-	return errors.New("mores")
+		//TODO: download
+
+	}*/
+	return errors.New("not found err")
 }
 func (c *taskExec) update() {
 	for {
@@ -162,15 +164,10 @@ func (c *taskExec) runJob() {
 		return
 	}
 
-	stat, err := os.Stat(c.repopth)
-	if err == nil {
-		if !stat.IsDir() {
-			c.status(common.BuildStatusError, "repo path err")
-			return
-		}
-	} else {
-		os.MkdirAll(c.repopth, 0750)
-		defer os.RemoveAll(c.repopth)
+	err := c.checkRepo()
+	if err != nil {
+		c.status(common.BuildStatusError, fmt.Sprintf("check repo:%v", err))
+		return
 	}
 
 	var envs map[string]string
