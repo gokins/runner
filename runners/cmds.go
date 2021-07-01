@@ -207,6 +207,13 @@ func (c *cmdExec) runCmd() error {
 	logrus.Debugf("job '%s' cmd end code:%d", c.prt.job.Name, c.prt.ExitCode)
 	time.Sleep(time.Second)
 	if err != nil || c.prt.ExitCode != 0 {
+		if c.cmdind >= 0 && c.cmdind < len(c.cmds) {
+			it := c.cmds[c.cmdind]
+			err := c.prt.prt.itr.UpdateCmd(c.prt.job.Id, it.Id, 2, c.prt.ExitCode)
+			if err != nil {
+				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
+			}
+		}
 		//c.job.Status = common.BUILD_STATUS_ERROR
 		//c.job.Error = fmt.Sprintf("command run err(code:%d):%v", c.job.ExitCode, err)
 		return fmt.Errorf("(code:%d):%v", c.prt.ExitCode, err)
