@@ -345,9 +345,11 @@ func (c *cmdExec) runCmdNext() {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}
 		c.cmdWriteString("\n")
+		c.cmdWriteString("\n")
 		c.cmdWriteString(`echo ""`)
 		c.cmdWriteString("\n")
 		c.cmdWriteString(it.Conts)
+		c.cmdWriteString("\n")
 		c.cmdWriteString("\n")
 		c.cmdWriteString(`
 GiteeGO_TEMP_CODE=$?
