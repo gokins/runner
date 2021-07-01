@@ -306,7 +306,7 @@ func (c *cmdExec) runCmdNext() {
 	ln := len(c.cmds)
 	if c.cmdind >= 0 && c.cmdind < ln {
 		it := c.cmds[c.cmdind]
-		err := c.prt.prt.itr.UpdateCmd(c.prt.job.Id, it.Id, 2)
+		err := c.prt.prt.itr.UpdateCmd(c.prt.job.Id, it.Id, 2, c.prt.ExitCode)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}
@@ -333,7 +333,7 @@ func (c *cmdExec) runCmdNext() {
 		c.stop()
 	} else {
 		it := c.cmds[c.cmdind]
-		err := c.prt.prt.itr.UpdateCmd(c.prt.job.Id, it.Id, 1)
+		err := c.prt.prt.itr.UpdateCmd(c.prt.job.Id, it.Id, 1, 0)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}

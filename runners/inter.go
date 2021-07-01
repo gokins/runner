@@ -35,6 +35,6 @@ type IExecute interface {
 	PullJob(plugs []string) (*RunJob, error)
 	Update(m *UpdateJobInfo) error
 	CheckCancel(buildId string) bool
-	UpdateCmd(jobid, cmdid string, fs int) error // fs:1:run,2:end
+	UpdateCmd(jobid, cmdid string, fs, code int) error // fs:1:run,2:end
 	PushOutLine(jobid, cmdid, bs string, iserr bool) error
 }
