@@ -52,6 +52,7 @@ func (c *taskExec) run() {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
+	logrus.Debugf("taskExec run job:%s", c.job.Name)
 	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, common.PathBuild, c.job.BuildId)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 
