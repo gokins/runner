@@ -19,10 +19,10 @@ type taskExec struct {
 	sync.RWMutex
 	prt      *Engine
 	job      *RunJob
-	Status   string `yaml:"status"`
-	Event    string `yaml:"event"`
-	Error    string `yaml:"error,omitempty"`
-	ExitCode int    `yaml:"exit_code"`
+	Status   string
+	Event    string
+	Error    string
+	ExitCode int
 
 	bngtm time.Time
 	endtm time.Time
