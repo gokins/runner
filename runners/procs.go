@@ -258,7 +258,7 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 	rn, err := c.cmderr.Read(bts)
 	if rn <= 0 && !c.cmdend.IsZero() {
 		if linebuf.Len() <= 0 {
-			return true
+			return false
 		}
 		//linebuf.WriteByte('\n')
 		bts[0] = '\n'
@@ -316,7 +316,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	rn, err := c.cmdout.Read(bts)
 	if rn <= 0 && !c.cmdend.IsZero() {
 		if linebuf.Len() <= 0 {
-			return true
+			return false
 		}
 		//linebuf.WriteByte('\n')
 		bts[0] = '\n'
@@ -330,7 +330,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	for i := 0; !hbtp.EndContext(c.prt.egn.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
 			bs := linebuf.String()
-			logrus.Debugf("test log line:%s", bs)
+			//logrus.Debugf("test log line:%s", bs)
 			if bs != "" {
 				c.pushCmdLine(bs, false)
 			}
@@ -339,7 +339,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 			linebuf.WriteByte(bts[i])
 		}
 	}
-	return false
+	return true
 }
 func (c *procExec) pushCmdLine(bs string, iserr bool) {
 	err := c.prt.egn.itr.PushOutLine(c.prt.job.Id, c.cmd.Id, bs, iserr)
