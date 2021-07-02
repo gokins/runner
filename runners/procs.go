@@ -87,11 +87,8 @@ func (c *procExec) start() (rterr error) {
 
 	name := "sh"
 	pars := []string{"-c"}
-	codes := "$?"
 	rands := utils.RandomString(10)
 	c.spts = childprefix + rands
-	ends := fmt.Sprintf("%s %s %s %s", bins, childcmd, codes, rands)
-	cmds := fmt.Sprintf("%s\n\r\n\necho \"\"\n%s\n\r\n\n%s", c.cmd.Conts, `echo "`+c.spts+`"`, ends)
 	if c.prt.job.Step == "shell@bash" {
 		name = "bash"
 	}
@@ -99,19 +96,27 @@ func (c *procExec) start() (rterr error) {
 		name = "docker"
 		pars := []string{"run","--rm","","-c"}
 	}*/
+	ends := fmt.Sprintf("%s %s %s %s", bins, childcmd, "$?", rands)
+	cmds := fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
+
 	if c.prt.job.Step == "shell@cmd" {
 		name = "cmd"
 		pars = []string{"/c"}
-		codes = "%ERRORLEVEL%"
+
+		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "%ERRORLEVEL%", rands)
+		cmds = fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
 		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
-		cmds = strings.ReplaceAll(cmds, "\n", "`r`n")
+		cmds = strings.ReplaceAll(cmds, "\n", "`n")
 	}
 	if c.prt.job.Step == "shell@powershell" {
 		name = "powershell"
 		pars = []string{"-Command"}
-		codes = "%ERRORLEVEL%"
+
+		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "$LASTEXITCODE", rands)
+		cmds = fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
 		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
-		cmds = strings.ReplaceAll(cmds, "\n", "`r`n")
+		cmds = strings.ReplaceAll(cmds, "\n", "`n")
+		println("ends:", ends)
 	}
 
 	pars = append(pars, cmds)
