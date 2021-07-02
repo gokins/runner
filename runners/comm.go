@@ -12,17 +12,18 @@ type UpdateJobInfo struct {
 	ExitCode int    `json:"exit_code"`
 }
 type RunJob struct {
-	Id              string                    `json:"id"`
-	StageId         string                    `json:"stageId"`
-	BuildId         string                    `json:"buildId"`
-	Step            string                    `json:"step"`
-	Name            string                    `json:"name"`
-	Environments    map[string]string         `json:"environments"`
-	Commands        []*CmdContent             `json:"commands"`
-	Artifacts       []*runtime.Artifact       `json:"artifacts"`
-	DependArtifacts []*runtime.DependArtifact `json:"dependArtifacts"`
-	IsClone         bool                      `json:"isClone"`
-	RepoPath        string                    `json:"repoPath"`
+	Id              string                        `json:"id"`
+	StageId         string                        `json:"stageId"`
+	BuildId         string                        `json:"buildId"`
+	Step            string                        `json:"step"`
+	Name            string                        `json:"name"`
+	Vars            map[string]*runtime.Variables `json:"vars"`
+	Env             map[string]string             `json:"env"`
+	Commands        []*CmdContent                 `json:"commands"`
+	Artifacts       []*runtime.Artifact           `json:"artifacts"`
+	DependArtifacts []*runtime.DependArtifact     `json:"dependArtifacts"`
+	IsClone         bool                          `json:"isClone"`
+	RepoPath        string                        `json:"repoPath"`
 }
 type CmdContent struct {
 	Id  string `json:"id"`
