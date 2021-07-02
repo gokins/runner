@@ -97,14 +97,14 @@ func (c *procExec) start() (rterr error) {
 		pars := []string{"run","--rm","","-c"}
 	}*/
 	ends := fmt.Sprintf("%s %s %s %s", bins, childcmd, "$?", rands)
-	cmds := fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
+	cmds := fmt.Sprintf("%s\n\r\n\n%s", c.cmd.Conts, ends)
 
 	if c.prt.job.Step == "shell@cmd" {
 		name = "cmd"
 		pars = []string{"/c"}
 
 		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "%ERRORLEVEL%", rands)
-		cmds = fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
+		cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
 		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
 		cmds = strings.ReplaceAll(cmds, "\n", "`n")
 	}
@@ -113,7 +113,7 @@ func (c *procExec) start() (rterr error) {
 		pars = []string{"-Command"}
 
 		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "$LASTEXITCODE", rands)
-		cmds = fmt.Sprintf("%s\necho ''\n%s", c.cmd.Conts, ends)
+		cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
 		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
 		cmds = strings.ReplaceAll(cmds, "\n", "`n")
 		println("ends:", ends)
