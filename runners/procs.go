@@ -134,11 +134,11 @@ func (c *procExec) start() (rterr error) {
 	if err != nil {
 		return err
 	}
-	defer c.close()
 
 	cmd.Dir = c.prt.repopth
 	err = cmd.Start()
 	if err != nil {
+		c.close()
 		//c.prt.job.ExitCode=-1
 		//c.prt.job.Error = fmt.Sprintf("command run err:%v", err)
 		return err
@@ -153,6 +153,8 @@ func (c *procExec) start() (rterr error) {
 		cmderr = c.runCmd()
 		logrus.Debugf("runCmd end!!!!")
 		atomic.AddInt32(&wtn, -1)
+		time.Sleep(time.Millisecond * 100)
+		c.close()
 	}()
 	go func() {
 		linebuf := &bytes.Buffer{}
@@ -195,6 +197,9 @@ func (c *procExec) start() (rterr error) {
 func (c *procExec) runCmd() (rterr error) {
 	defer func() {
 		c.cmdend = time.Now()
+		/*if c.cmdinr != nil {
+			c.cmdinr.Close()
+		}*/
 		logrus.Debugf("procExec end code:%d!!", c.prt.ExitCode)
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
