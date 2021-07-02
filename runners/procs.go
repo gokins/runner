@@ -112,14 +112,13 @@ func (c *procExec) start() (rterr error) {
 	}
 	if c.prt.job.Step == "shell@powershell" {
 		name = "powershell"
-		pars = []string{"-Command"}
+		pars = []string{"/c"}
 
 		cmds = c.cmd.Conts
 		//ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "$LASTEXITCODE", rands)
 		//cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
 		//cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
 		//cmds = strings.ReplaceAll(cmds, "\n", "`n")
-		println("ends:", ends)
 	}
 
 	pars = append(pars, cmds)
@@ -271,7 +270,7 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
 			bs := linebuf.String()
-			logrus.Debugf("test errlog line:%s", bs)
+			//logrus.Debugf("test errlog line:%s", bs)
 			if bs == "" {
 
 			} else if strings.Contains(bs, c.spts) {
@@ -330,6 +329,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
 			bs := linebuf.String()
+			logrus.Debugf("test log line:%s", bs)
 			if bs != "" {
 				c.pushCmdLine(bs, false)
 			}
