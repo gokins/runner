@@ -101,7 +101,7 @@ func (c *Engine) run() {
 	c.linelk.Lock()
 	defer c.linelk.Unlock()
 	e := &taskExec{
-		prt: c,
+		egn: c,
 		job: job,
 	}
 	c.lines[job.Id] = e

@@ -17,7 +17,7 @@ import (
 
 type taskExec struct {
 	sync.RWMutex
-	prt      *Engine
+	egn      *Engine
 	job      *RunJob
 	Status   string
 	Event    string
@@ -54,7 +54,7 @@ func (c *taskExec) run() {
 		}
 	}()
 	logrus.Debugf("taskExec run job:%s", c.job.Name)
-	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, c.job.BuildId)
+	c.wrkpth = filepath.Join(c.egn.cfg.Workspace, c.job.BuildId)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 
 	c.cmdend = false
@@ -71,13 +71,13 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	// c.prt.sysEnv.SetOs() //重设环境变量
+	// c.egn.sysEnv.SetOs() //重设环境变量
 	// c.cmdenv = utils.EnvVal{}
-	c.cmdctx, c.cmdcncl = context.WithCancel(c.prt.ctx)
+	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
 	go c.runJob()
-	for !hbtp.EndContext(c.prt.ctx) && !c.cmdend {
+	for !hbtp.EndContext(c.egn.ctx) && !c.cmdend {
 		time.Sleep(time.Millisecond * 100)
 		if c.checkStop() {
 			c.stop()
@@ -127,7 +127,7 @@ func (c *taskExec) update() {
 		}
 		logrus.Errorf("ExecTask update err:%v", err)
 		time.Sleep(time.Millisecond * 100)
-		if hbtp.EndContext(c.prt.ctx) {
+		if hbtp.EndContext(c.egn.ctx) {
 			break
 		}
 	}
@@ -141,7 +141,7 @@ func (c *taskExec) updates() error {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	return c.prt.itr.Update(&UpdateJobInfo{
+	return c.egn.itr.Update(&UpdateJobInfo{
 		Id:       c.job.Id,
 		Status:   c.Status,
 		Error:    c.Error,
@@ -149,7 +149,7 @@ func (c *taskExec) updates() error {
 	})
 }
 func (c *taskExec) checkStop() bool {
-	return c.prt.itr.CheckCancel(c.job.BuildId)
+	return c.egn.itr.CheckCancel(c.job.BuildId)
 }
 func (c *taskExec) runJob() {
 	defer func() {
@@ -176,7 +176,7 @@ func (c *taskExec) runJob() {
 			prt: c,
 			cmd: v,
 		}
-		err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, 1, 0)
+		err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, 1, 0)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}
@@ -190,13 +190,13 @@ func (c *taskExec) runJob() {
 				c.status(common.BuildStatusError, err.Error())
 				code = -1
 			}
-			err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, code, c.ExitCode)
+			err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, code, c.ExitCode)
 			if err != nil {
 				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 			}
 			return
 		}
-		err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, 2, c.ExitCode)
+		err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, 2, c.ExitCode)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}

@@ -178,7 +178,7 @@ func (c *procExec) start() (rterr error) {
 	}()
 	go func() {
 		linebuf := &bytes.Buffer{}
-		for !hbtp.EndContext(c.prt.prt.ctx) && c.runReadErr(linebuf) {
+		for !hbtp.EndContext(c.prt.egn.ctx) && c.runReadErr(linebuf) {
 			time.Sleep(time.Millisecond)
 		}
 		logrus.Debugf("runReadErr end!!!!")
@@ -186,7 +186,7 @@ func (c *procExec) start() (rterr error) {
 	}()
 	go func() {
 		linebuf := &bytes.Buffer{}
-		for !hbtp.EndContext(c.prt.prt.ctx) && c.runReadOut(linebuf) {
+		for !hbtp.EndContext(c.prt.egn.ctx) && c.runReadOut(linebuf) {
 			time.Sleep(time.Millisecond)
 		}
 		logrus.Debugf("runReadOut end!!!!")
@@ -267,7 +267,7 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 	if err != nil {
 		return c.cmdend.IsZero()
 	}
-	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
+	for i := 0; !hbtp.EndContext(c.prt.egn.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
 			bs := linebuf.String()
 			//logrus.Debugf("test errlog line:%s", bs)
@@ -326,7 +326,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 		return c.cmdend.IsZero()
 	}
 
-	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
+	for i := 0; !hbtp.EndContext(c.prt.egn.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
 			bs := linebuf.String()
 			logrus.Debugf("test log line:%s", bs)
@@ -341,7 +341,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	return false
 }
 func (c *procExec) pushCmdLine(bs string, iserr bool) {
-	err := c.prt.prt.itr.PushOutLine(c.prt.job.Id, c.cmd.Id, bs, iserr)
+	err := c.prt.egn.itr.PushOutLine(c.prt.job.Id, c.cmd.Id, bs, iserr)
 	if err != nil {
 		logrus.Errorf("procExec PushOutLine err:%v", err)
 	}
