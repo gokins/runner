@@ -3,12 +3,10 @@ package runners
 import (
 	"context"
 	"errors"
-	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -51,7 +49,7 @@ func (c *Engine) Start(ctx context.Context) error {
 	if len(c.cfg.Plugin) <= 0 {
 		return errors.New("plugins is empty(please see --help)")
 	}
-	os.MkdirAll(filepath.Join(c.cfg.Workspace, common.PathBuild), 0755)
+	os.MkdirAll(c.cfg.Workspace, 0755)
 	if ctx == nil {
 		ctx = context.Background()
 	}

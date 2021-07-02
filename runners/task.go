@@ -54,7 +54,7 @@ func (c *taskExec) run() {
 		}
 	}()
 	logrus.Debugf("taskExec run job:%s", c.job.Name)
-	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, common.PathBuild, c.job.BuildId)
+	c.wrkpth = filepath.Join(c.prt.cfg.Workspace, c.job.BuildId)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 
 	c.cmdend = false
