@@ -97,7 +97,7 @@ func (c *procExec) start() (rterr error) {
 		pars := []string{"run","--rm","","-c"}
 	}*/
 	ends := fmt.Sprintf("%s %s %s %s", bins, childcmd, "$?", rands)
-	cmds := fmt.Sprintf("%s\n\r\n\n%s", c.cmd.Conts, ends)
+	cmds := fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
 
 	if c.prt.job.Step == "shell@cmd" {
 		name = "cmd"
