@@ -33,6 +33,7 @@ type taskExec struct {
 	cmdctx  context.Context
 	cmdcncl context.CancelFunc
 	cmdend  bool
+	cmdenv  []string
 }
 
 func (c *taskExec) status(stat, errs string, event ...string) {

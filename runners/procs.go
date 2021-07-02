@@ -103,19 +103,21 @@ func (c *procExec) start() (rterr error) {
 		name = "cmd"
 		pars = []string{"/c"}
 
-		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "%ERRORLEVEL%", rands)
-		cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
-		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
-		cmds = strings.ReplaceAll(cmds, "\n", "`n")
+		cmds = c.cmd.Conts
+		//ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "%ERRORLEVEL%", rands)
+		//cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
+		//cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
+		//cmds = strings.ReplaceAll(cmds, "\n", "`n")
 	}
 	if c.prt.job.Step == "shell@powershell" {
 		name = "powershell"
 		pars = []string{"-Command"}
 
-		ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "$LASTEXITCODE", rands)
-		cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
-		cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
-		cmds = strings.ReplaceAll(cmds, "\n", "`n")
+		cmds = c.cmd.Conts
+		//ends = fmt.Sprintf("%s %s %s %s", bins, childcmd, "$LASTEXITCODE", rands)
+		//cmds = fmt.Sprintf("%s\n\n\n%s", c.cmd.Conts, ends)
+		//cmds = strings.ReplaceAll(cmds, "\r\n", "`r`n")
+		//cmds = strings.ReplaceAll(cmds, "\n", "`n")
 		println("ends:", ends)
 	}
 
@@ -136,6 +138,9 @@ func (c *procExec) start() (rterr error) {
 	}
 
 	cmd.Dir = c.prt.repopth
+	if len(c.prt.cmdenv) > 0 {
+		cmd.Env = c.prt.cmdenv
+	}
 	err = cmd.Start()
 	if err != nil {
 		c.close()
@@ -297,12 +302,11 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 			} else if strings.Contains(bs, c.spts) {
 				c.sptck = true
 			} else if c.sptck {
-				envs := utils.EnvVal{}
-				err := json.Unmarshal(linebuf.Bytes(), &envs)
-				if err == nil {
-					envs.SetOs() //设置环境变量
-					return false
+				err = json.Unmarshal(linebuf.Bytes(), &c.prt.cmdenv)
+				if err != nil {
+					logrus.Debugf("end spts check err:%v", err)
 				}
+				return false
 			} else {
 				c.pushCmdLine(bs, false)
 			}
