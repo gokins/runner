@@ -172,7 +172,7 @@ func (c *procExec) start() (rterr error) {
 	wtn := int32(3)
 	go func() {
 		cmderr = c.runCmd()
-		c.killCmd()
+		// c.killCmd()
 		logrus.Debugf("runCmd end!!!!")
 		atomic.AddInt32(&wtn, -1)
 		time.Sleep(time.Millisecond * 100)
