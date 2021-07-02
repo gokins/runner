@@ -3,6 +3,7 @@ package runners
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gokins-main/core/utils"
 	"os"
 	"strconv"
 )
@@ -30,7 +31,7 @@ func childProcess() int {
 	}
 	fmt.Print("\n\n")
 	fmt.Println(childprefix + spts)
-	evns := map[string]string{}
+	evns := utils.AllEnv()
 	bts, err := json.Marshal(evns)
 	if err != nil {
 		println("sys env err:" + err.Error())
@@ -39,3 +40,14 @@ func childProcess() int {
 	fmt.Println(string(bts))
 	return code
 }
+
+/*func reads(){
+	bts:=make([]byte,1024)
+	n,err:=os.Stdin.Read(bts)
+	if n>0{
+		println("reads:",string(bts))
+	}
+	if err!=nil{
+
+	}
+}*/

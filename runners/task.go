@@ -32,7 +32,6 @@ type taskExec struct {
 
 	cmdctx  context.Context
 	cmdcncl context.CancelFunc
-	cmd     *cmdExec
 	cmdend  bool
 }
 
@@ -70,6 +69,7 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
+	c.prt.sysEnv.SetOs() //重设环境变量
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.prt.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
@@ -84,9 +84,6 @@ ends:
 	c.update()
 }
 func (c *taskExec) stop() {
-	if c.cmd != nil {
-		c.cmd.stop()
-	}
 	if c.cmdcncl != nil {
 		c.cmdcncl()
 		c.cmdcncl = nil
@@ -171,20 +168,35 @@ func (c *taskExec) runJob() {
 		return
 	}
 
-	var envs map[string]string
-	c.cmd = &cmdExec{
-		prt:  c,
-		envs: envs,
-		cmds: c.job.Commands,
-	}
-	err = c.cmd.start()
-	if err != nil {
-		if hbtp.EndContext(c.cmdctx) {
-			c.status(common.BuildStatusCancel, err.Error())
-		} else {
-			c.status(common.BuildStatusError, err.Error())
+	for _, v := range c.job.Commands {
+		proc := &procExec{
+			prt: c,
+			cmd: v,
 		}
-		return
+		err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, 1, 0)
+		if err != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
+		}
+		err = proc.start()
+		if err != nil {
+			code := -1
+			if hbtp.EndContext(c.cmdctx) {
+				c.status(common.BuildStatusCancel, err.Error())
+				code = 3
+			} else {
+				c.status(common.BuildStatusError, err.Error())
+				code = -1
+			}
+			err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, code, c.ExitCode)
+			if err != nil {
+				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
+			}
+			return
+		}
+		err = c.prt.itr.UpdateCmd(c.job.Id, v.Id, 2, c.ExitCode)
+		if err != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
+		}
 	}
 
 	/*if c.Status != common.BuildStatusOk {
