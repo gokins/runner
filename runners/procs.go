@@ -24,6 +24,7 @@ type procExec struct {
 	cmd  *CmdContent
 	ctx  context.Context
 	cncl context.CancelFunc
+	envs map[string]string
 
 	child  *exec.Cmd
 	cmdend time.Time

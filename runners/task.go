@@ -173,8 +173,9 @@ func (c *taskExec) runJob() {
 
 	for _, v := range c.job.Commands {
 		proc := &procExec{
-			prt: c,
-			cmd: v,
+			prt:  c,
+			cmd:  v,
+			envs: c.job.Env,
 		}
 		err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, 1, 0)
 		if err != nil {
