@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gokins-main/core/utils"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
@@ -16,6 +13,10 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/gokins-main/core/utils"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
 )
 
 type procExec struct {
@@ -122,7 +123,6 @@ func (c *procExec) start() (rterr error) {
 	}
 
 	pars = append(pars, cmds)
-	logrus.Debugf("exec[%s]:%+v", name, pars)
 	cmd := exec.CommandContext(c.ctx, name, pars...)
 	c.cmdinr, err = cmd.StdinPipe()
 	if err != nil {
@@ -138,8 +138,24 @@ func (c *procExec) start() (rterr error) {
 	}
 
 	cmd.Dir = c.prt.repopth
-	if len(c.prt.cmdenv) > 0 {
-		cmd.Env = c.prt.cmdenv
+	if c.prt.cmdenv != nil && len(c.prt.cmdenv) > 0 {
+		envs := []string{}
+		c.prt.cmdenvlk.RLock() /*
+			for k, v := range c.prt.cmdenv {
+				if k != "" && v != "" {
+					logrus.Debugf("put env[%s]:%s", k, v)
+					envs = append(envs, k+"="+v)
+				}
+			} */
+		for _, v := range c.prt.cmdenv {
+			if v != "" {
+				envs = append(envs, v)
+			}
+		}
+		c.prt.cmdenvlk.RUnlock()
+		if len(envs) > 0 {
+			cmd.Env = envs
+		}
 	}
 	err = cmd.Start()
 	if err != nil {
@@ -254,9 +270,27 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 	}
 	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
-			bs := string(linebuf.Bytes())
+			bs := linebuf.String()
 			logrus.Debugf("test errlog line:%s", bs)
-			if bs != "" {
+			if bs == "" {
+
+			} else if strings.Contains(bs, c.spts) {
+				c.sptck = true
+			} else if c.sptck {
+				var env []string
+				// env := utils.EnvVal{}
+				err = json.Unmarshal(linebuf.Bytes(), &env)
+				if err != nil {
+					logrus.Debugf("end spts check err:%v", err)
+				} else if len(env) > 0 {
+					c.prt.cmdenvlk.Lock()
+					c.prt.cmdenv = env
+					/* for k, v := range env {
+						c.prt.cmdenv[k] = v
+					} */
+					c.prt.cmdenvlk.Unlock()
+				}
+			} else {
 				c.pushCmdLine(bs, true)
 			}
 			linebuf.Reset()
@@ -295,19 +329,8 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 
 	for i := 0; !hbtp.EndContext(c.prt.prt.ctx) && i < rn; i++ {
 		if bts[i] == '\n' {
-			bs := string(linebuf.Bytes())
-			logrus.Debugf("test log line:%s", bs)
-			if bs == "" {
-
-			} else if strings.Contains(bs, c.spts) {
-				c.sptck = true
-			} else if c.sptck {
-				err = json.Unmarshal(linebuf.Bytes(), &c.prt.cmdenv)
-				if err != nil {
-					logrus.Debugf("end spts check err:%v", err)
-				}
-				return false
-			} else {
+			bs := linebuf.String()
+			if bs != "" {
 				c.pushCmdLine(bs, false)
 			}
 			linebuf.Reset()

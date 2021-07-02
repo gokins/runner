@@ -30,10 +30,11 @@ type taskExec struct {
 	wrkpth  string //工作地址
 	repopth string //仓库地址
 
-	cmdctx  context.Context
-	cmdcncl context.CancelFunc
-	cmdend  bool
-	cmdenv  []string
+	cmdctx   context.Context
+	cmdcncl  context.CancelFunc
+	cmdend   bool
+	cmdenv   []string
+	cmdenvlk sync.RWMutex
 }
 
 func (c *taskExec) status(stat, errs string, event ...string) {
@@ -70,7 +71,8 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	c.prt.sysEnv.SetOs() //重设环境变量
+	// c.prt.sysEnv.SetOs() //重设环境变量
+	// c.cmdenv = utils.EnvVal{}
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.prt.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()

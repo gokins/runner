@@ -2,9 +2,9 @@ package runners
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 const childcmd = "commandChildProcess"
@@ -28,16 +28,17 @@ func childProcess() int {
 	if spts == "" {
 		return 3
 	}
-	fmt.Print("\n\n")
-	fmt.Println(childprefix + spts)
-	//evns := utils.AllEnv()
+	println()
+	// evns := utils.AllEnv()
 	evns := os.Environ()
 	bts, err := json.Marshal(evns)
 	if err != nil {
 		println("sys env err:" + err.Error())
 		return 4
 	}
-	fmt.Println(string(bts))
+	println(childprefix + spts)
+	println(string(bts))
+	time.Sleep(time.Millisecond * 50)
 	return code
 }
 
