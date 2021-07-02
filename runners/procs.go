@@ -172,6 +172,7 @@ func (c *procExec) start() (rterr error) {
 	wtn := int32(3)
 	go func() {
 		cmderr = c.runCmd()
+		c.killCmd()
 		logrus.Debugf("runCmd end!!!!")
 		atomic.AddInt32(&wtn, -1)
 		time.Sleep(time.Millisecond * 100)
@@ -224,7 +225,7 @@ func (c *procExec) runCmd() (rterr error) {
 		logrus.Debugf("procExec end code:%d!!", c.prt.ExitCode)
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
-			logrus.Warnf("procExec start recover:%v", err)
+			logrus.Warnf("procExec runCmd recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
