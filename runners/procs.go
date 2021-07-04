@@ -137,26 +137,25 @@ func (c *procExec) start() (rterr error) {
 		return err
 	}
 
-	cmd.Dir = c.prt.repopth
-	if c.prt.cmdenv != nil && len(c.prt.cmdenv) > 0 {
-		envs := []string{}
-		c.prt.cmdenvlk.RLock() /*
-			for k, v := range c.prt.cmdenv {
-				if k != "" && v != "" {
-					logrus.Debugf("put env[%s]:%s", k, v)
-					envs = append(envs, k+"="+v)
-				}
-			} */
-		for _, v := range c.prt.cmdenv {
-			if v != "" {
-				envs = append(envs, v)
-			}
-		}
-		c.prt.cmdenvlk.RUnlock()
-		if len(envs) > 0 {
-			cmd.Env = envs
+	var envs []string
+	c.prt.cmdenvlk.RLock()
+	for k, v := range c.prt.cmdenv {
+		_, ok := c.prt.job.Env[k]
+		if !ok && k != "" && v != "" {
+			envs = append(envs, k+"="+v)
 		}
 	}
+	c.prt.cmdenvlk.RUnlock()
+	if c.prt.job.Env != nil && len(c.prt.job.Env) > 0 {
+		for k, v := range c.prt.job.Env {
+			if k != "" && v != "" {
+				logrus.Debugf("put env[%s]:%s", k, v)
+				envs = append(envs, k+"="+v)
+			}
+		}
+	}
+	cmd.Env = envs
+	cmd.Dir = c.prt.repopth
 	err = cmd.Start()
 	if err != nil {
 		c.close()
@@ -278,8 +277,8 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 			} else if strings.Contains(bs, c.spts) {
 				c.sptck = true
 			} else if c.sptck {
-				var env []string
-				// env := utils.EnvVal{}
+				//var env []string
+				env := utils.EnvVal{}
 				err = json.Unmarshal(linebuf.Bytes(), &env)
 				if err != nil {
 					logrus.Debugf("end spts check err:%v", err)

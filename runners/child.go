@@ -2,6 +2,7 @@ package runners
 
 import (
 	"encoding/json"
+	"github.com/gokins-main/core/utils"
 	"os"
 	"strconv"
 	"time"
@@ -29,8 +30,8 @@ func childProcess() int {
 		return 3
 	}
 	println()
-	// evns := utils.AllEnv()
-	evns := os.Environ()
+	evns := utils.AllEnv()
+	//evns := os.Environ()
 	bts, err := json.Marshal(evns)
 	if err != nil {
 		println("sys env err:" + err.Error())

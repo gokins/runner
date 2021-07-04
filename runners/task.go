@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gokins-main/core/utils"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -33,7 +34,7 @@ type taskExec struct {
 	cmdctx   context.Context
 	cmdcncl  context.CancelFunc
 	cmdend   bool
-	cmdenv   []string
+	cmdenv   utils.EnvVal
 	cmdenvlk sync.RWMutex
 }
 
@@ -72,7 +73,7 @@ func (c *taskExec) run() {
 		goto ends
 	}
 	// c.egn.sysEnv.SetOs() //重设环境变量
-	// c.cmdenv = utils.EnvVal{}
+	c.cmdenv = utils.EnvVal{}
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()

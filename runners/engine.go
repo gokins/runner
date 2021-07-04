@@ -3,6 +3,7 @@ package runners
 import (
 	"context"
 	"errors"
+	"github.com/gokins-main/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -17,7 +18,7 @@ type Engine struct {
 	cfg  Config
 	itr  IExecute
 
-	//sysEnv utils.EnvVal
+	sysEnv utils.EnvVal
 	linelk sync.RWMutex
 	lines  map[string]*taskExec
 }
@@ -54,7 +55,7 @@ func (c *Engine) Start(ctx context.Context) error {
 	}
 	c.ctx, c.cncl = context.WithCancel(ctx)
 	go func() {
-		//c.sysEnv = utils.AllEnv()
+		c.sysEnv = utils.AllEnv()
 		for !c.Stopd() {
 			c.run()
 			time.Sleep(time.Millisecond * 100)
