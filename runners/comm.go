@@ -2,7 +2,6 @@ package runners
 
 import (
 	"github.com/gokins-main/core/runtime"
-	"time"
 )
 
 type UpdateJobInfo struct {
@@ -25,11 +24,11 @@ type RunJob struct {
 	RepoPath        string                    `json:"repoPath"`
 }
 type CmdContent struct {
-	Id  string `json:"id"`
-	Gid string `json:"gid"`
+	Id string `json:"id"`
+	//Gid string `json:"gid"`
 	//Pid   string    `json:"pid"`
-	Conts string    `json:"conts"`
-	Times time.Time `json:"times"`
+	Conts string `json:"conts"`
+	//Times time.Time `json:"times"`
 }
 type IExecute interface {
 	PullJob(plugs []string) (*RunJob, error)
