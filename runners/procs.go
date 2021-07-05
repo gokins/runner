@@ -269,7 +269,7 @@ func (c *procExec) runReadErr(linebuf *bytes.Buffer) bool {
 		return c.cmdend.IsZero()
 	}
 	for i := 0; !hbtp.EndContext(c.prt.egn.ctx) && i < rn; i++ {
-		if bts[i] == '\n' {
+		if bts[i] == '\r' || bts[i] == '\n' {
 			bs := linebuf.String()
 			//logrus.Debugf("test errlog line:%s", bs)
 			if bs == "" {
@@ -328,7 +328,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	}
 
 	for i := 0; !hbtp.EndContext(c.prt.egn.ctx) && i < rn; i++ {
-		if bts[i] == '\n' {
+		if bts[i] == '\r' || bts[i] == '\n' {
 			bs := linebuf.String()
 			//logrus.Debugf("test log line:%s", bs)
 			if bs != "" {
