@@ -21,8 +21,6 @@ type RunJob struct {
 	Commands        []*CmdContent             `json:"commands"`
 	Artifacts       []*runtime.Artifact       `json:"artifacts"`
 	DependArtifacts []*runtime.DependArtifact `json:"dependArtifacts"`
-	IsClone         bool                      `json:"isClone"`
-	RepoPath        string                    `json:"repoPath"`
 }
 type CmdContent struct {
 	Id string `json:"id"`
@@ -44,6 +42,6 @@ type IExecute interface {
 	UpdateCmd(jobid, cmdid string, fs, code int) error // fs:1:run,2:end
 	PushOutLine(jobid, cmdid, bs string, iserr bool) error
 
-	ReadDir(buildId, dir string, pth string) ([]*DirEntry, error)
-	ReadFile(buildId, dir string, pth string) (io.ReadCloser, error)
+	ReadDir(fs int, buildId string, pth string) ([]*DirEntry, error)
+	ReadFile(fs int, buildId string, pth string) (io.ReadCloser, error)
 }

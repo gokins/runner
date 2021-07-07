@@ -159,7 +159,7 @@ func (c *taskExec) checkRepo() error {
 	return c.cprepodir("/")
 }
 func (c *taskExec) cprepodir(pth string) error {
-	fls, err := c.egn.itr.ReadDir(c.job.BuildId, common.PathRepo, pth)
+	fls, err := c.egn.itr.ReadDir(1, c.job.BuildId, pth)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (c *taskExec) cprepodir(pth string) error {
 	return nil
 }
 func (c *taskExec) cprepofl(pth string) error {
-	flr, err := c.egn.itr.ReadFile(c.job.BuildId, common.PathRepo, pth)
+	flr, err := c.egn.itr.ReadFile(1, c.job.BuildId, pth)
 	if err != nil {
 		return err
 	}
