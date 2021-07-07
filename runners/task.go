@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -75,6 +76,17 @@ func (c *taskExec) run() {
 	}
 	// c.egn.sysEnv.SetOs() //重设环境变量
 	c.cmdenv = utils.EnvVal{}
+	for _, v := range c.egn.cfg.Env {
+		i := strings.Index(v, "=")
+		if i > 0 {
+			k := v[:i]
+			val := v[i+1:]
+			if val != "" {
+				c.cmdenv[k] = val
+				logrus.Debug("cmd env:", k, "=", val)
+			}
+		}
+	}
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()

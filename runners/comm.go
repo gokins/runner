@@ -12,15 +12,15 @@ type UpdateJobInfo struct {
 	ExitCode int    `json:"exit_code"`
 }
 type RunJob struct {
-	Id              string                    `json:"id"`
-	StageId         string                    `json:"stageId"`
-	BuildId         string                    `json:"buildId"`
-	Step            string                    `json:"step"`
-	Name            string                    `json:"name"`
-	Env             map[string]string         `json:"env"`
-	Commands        []*CmdContent             `json:"commands"`
-	Artifacts       []*runtime.Artifact       `json:"artifacts"`
-	DependArtifacts []*runtime.DependArtifact `json:"dependArtifacts"`
+	Id           string                 `json:"id"`
+	StageId      string                 `json:"stageId"`
+	BuildId      string                 `json:"buildId"`
+	Step         string                 `json:"step"`
+	Name         string                 `json:"name"`
+	Env          map[string]string      `json:"env"`
+	Commands     []*CmdContent          `json:"commands"`
+	Artifacts    []*runtime.Artifact    `json:"artifacts"`
+	UseArtifacts []*runtime.UseArtifact `json:"useArtifacts"`
 }
 type CmdContent struct {
 	Id string `json:"id"`

@@ -4,5 +4,5 @@ type Config struct {
 	Workspace string
 	Limit     int
 	Plugin    []string
-	CmdBin    string
+	Env       []string
 }
