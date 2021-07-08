@@ -181,7 +181,7 @@ func (c *taskExec) genArts() (rterr error) {
 	for _, v := range c.job.Artifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
-			pths, isdir, err := c.chkArtsPath(v.Path)
+			pths, stat, err := c.chkArtsPath(v.Path)
 			if err != nil {
 				return err
 			}
@@ -191,10 +191,10 @@ func (c *taskExec) genArts() (rterr error) {
 			}
 			//TODO: upload pack
 			println(pakid) //?
-			if isdir {
-				err = c.uploaddir(v.Name, "/", pths)
+			if stat.IsDir() {
+				err = c.uploaddir(v.Name, stat.Name(), pths)
 			} else {
-				err = c.uploadfl(v.Name, "/", pths)
+				err = c.uploadfl(v.Name, stat.Name(), pths)
 			}
 			if err != nil {
 				return err
