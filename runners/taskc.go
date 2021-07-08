@@ -3,14 +3,15 @@ package runners
 import (
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/utils"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+
+	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/utils"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
 )
 
 func (c *taskExec) checkRepo() (rterr error) {
@@ -27,14 +28,18 @@ func (c *taskExec) checkRepo() (rterr error) {
 	}
 	return c.copyServDir(1, "/", c.repopth)
 }
-func (c *taskExec) copyServDir(fs int, pth, root2s string) error {
+func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) error {
 	defer func() {
 		if err := recover(); err != nil {
 			logrus.Warnf("taskExec getArts recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	fls, err := c.egn.itr.ReadDir(fs, c.job.BuildId, pth)
+	rpth := pth
+	if len(rmtPrefix) > 0 && rmtPrefix[0] != "" {
+		rpth = filepath.Join(rmtPrefix[0], pth)
+	}
+	fls, err := c.egn.itr.ReadDir(fs, c.job.BuildId, rpth)
 	if err != nil {
 		return err
 	}
@@ -42,9 +47,9 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string) error {
 	for _, v := range fls {
 		pths := filepath.Join(pth, v.Name)
 		if v.IsDir {
-			err = c.copyServDir(fs, pths, root2s)
+			err = c.copyServDir(fs, pths, root2s, rmtPrefix...)
 		} else {
-			err = c.cprepofl(fs, pths, root2s)
+			err = c.cprepofl(fs, pths, root2s, rmtPrefix...)
 		}
 		if err != nil {
 			return err
@@ -52,8 +57,12 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string) error {
 	}
 	return nil
 }
-func (c *taskExec) cprepofl(fs int, pth, root2s string) error {
-	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, pth)
+func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) error {
+	rpth := pth
+	if len(rmtPrefix) > 0 && rmtPrefix[0] != "" {
+		rpth = filepath.Join(rmtPrefix[0], pth)
+	}
+	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, rpth)
 	if err != nil {
 		return err
 	}
@@ -128,7 +137,7 @@ func (c *taskExec) getArts() (rterr error) {
 			if !ok {
 				return errors.New("Not Found SourceStep")
 			}
-			err = c.copyServDir(2, filepath.Join("/", jid, common.PathArts, v.Name), pths)
+			err = c.copyServDir(2, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
 			if err != nil {
 				return err
 			}
@@ -151,13 +160,13 @@ func (c *taskExec) getArts() (rterr error) {
 	}
 	return nil
 }
-func (c *taskExec) chkArtsPath(pth string) (string, bool, error) {
+func (c *taskExec) chkArtsPath(pth string) (string, os.FileInfo, error) {
 	pths := filepath.Join(c.repopth, pth)
 	stat, err := os.Stat(pths)
 	if err != nil {
-		return "", false, err
+		return "", nil, err
 	}
-	return pths, stat.IsDir(), nil
+	return pths, stat, nil
 }
 func (c *taskExec) genArts() (rterr error) {
 	defer func() {
@@ -173,14 +182,14 @@ func (c *taskExec) genArts() (rterr error) {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
 		case common.ArtsPipeline, common.ArtsPipe:
-			pths, isdir, err := c.chkArtsPath(v.Path)
+			pths, stat, err := c.chkArtsPath(v.Path)
 			if err != nil {
 				return err
 			}
-			if isdir {
-				err = c.uploaddir(v.Name, "/", pths)
+			if stat.IsDir() {
+				err = c.uploaddir(v.Name, stat.Name(), pths)
 			} else {
-				err = c.uploadfl(v.Name, "/", pths)
+				err = c.uploadfl(v.Name, stat.Name(), pths)
 			}
 			if err != nil {
 				return err

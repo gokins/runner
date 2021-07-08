@@ -164,7 +164,7 @@ func (c *taskExec) runJob() {
 		c.status(common.BuildStatusError, "not found any commands")
 		return
 	}
-
+	c.initCmdEnv()
 	err := c.checkRepo()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check repo:%v", err))
@@ -177,7 +177,6 @@ func (c *taskExec) runJob() {
 		return
 	}
 
-	c.initCmdEnv()
 	for _, v := range c.job.Commands {
 		proc := &procExec{
 			prt:  c,
