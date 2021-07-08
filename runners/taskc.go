@@ -172,6 +172,24 @@ func (c *taskExec) genArts() (rterr error) {
 	for _, v := range c.job.Artifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
+			pths, isdir, err := c.chkArtsPath(v.Path)
+			if err != nil {
+				return err
+			}
+			pakid, err := c.egn.itr.FindArtPackId(c.job.Id, v.Repository, v.Name)
+			if err != nil {
+				return err
+			}
+			//TODO: upload pack
+			println(pakid) //?
+			if isdir {
+				err = c.uploaddir(v.Name, "/", pths)
+			} else {
+				err = c.uploadfl(v.Name, "/", pths)
+			}
+			if err != nil {
+				return err
+			}
 		case common.ArtsPipeline, common.ArtsPipe:
 			pths, isdir, err := c.chkArtsPath(v.Path)
 			if err != nil {

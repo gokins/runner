@@ -49,6 +49,7 @@ type IExecute interface {
 	ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error)
 	GetEnv(jobid, key string) (string, bool)
 
+	FindArtPackId(jobid, idnt string, name string) (string, error)
 	UploadFile(jobid string, name, pth string) (io.WriteCloser, error)
 	GenEnv(jobid string, env utils.EnvVal) error
 }
