@@ -2,6 +2,7 @@ package runners
 
 import (
 	"github.com/gokins-main/core/runtime"
+	"github.com/gokins-main/core/utils"
 	"io"
 )
 
@@ -15,6 +16,7 @@ type RunJob struct {
 	Id           string                 `json:"id"`
 	StageId      string                 `json:"stageId"`
 	BuildId      string                 `json:"buildId"`
+	StageName    string                 `json:"StageName"`
 	Step         string                 `json:"step"`
 	Name         string                 `json:"name"`
 	Env          map[string]string      `json:"env"`
@@ -41,7 +43,12 @@ type IExecute interface {
 	CheckCancel(buildId string) bool
 	UpdateCmd(jobid, cmdid string, fs, code int) error // fs:1:run,2:end
 	PushOutLine(jobid, cmdid, bs string, iserr bool) error
+	FindJobId(buildId, stgNm, stpNm string) (string, bool)
 
 	ReadDir(fs int, buildId string, pth string) ([]*DirEntry, error)
-	ReadFile(fs int, buildId string, pth string) (io.ReadCloser, error)
+	ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error)
+	GetEnv(jobid, key string) (string, bool)
+
+	UploadFile(jobid string, name, pth string) (io.WriteCloser, error)
+	GenEnv(jobid string, env utils.EnvVal) error
 }

@@ -87,6 +87,7 @@ func (c *taskExec) run() {
 			}
 		}
 	}
+	c.cmdenv["WORKPATH"] = c.wrkpth
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
@@ -145,74 +146,6 @@ func (c *taskExec) updates() error {
 func (c *taskExec) checkStop() bool {
 	return c.egn.itr.CheckCancel(c.job.BuildId)
 }
-func (c *taskExec) checkRepo() error {
-	/*if !c.job.IsClone {
-		stat, err := os.Stat(c.job.RepoPath)
-		if err == nil && stat.IsDir() {
-			c.repopth = c.job.RepoPath
-		}
-	}*/
-	_, err := os.Stat(c.repopth)
-	if err == nil {
-		return errors.New("path is exist")
-		//if stat.IsDir() {
-		//return nil
-		//} else {
-		//	return errors.New("path is not dir")
-		//}
-	} /* else {
-		//TODO: download
-
-	}*/
-	/*err=os.MkdirAll(c.repopth,0750)
-	if err!=nil{
-		return err
-	}*/
-	return c.cprepodir("/")
-}
-func (c *taskExec) cprepodir(pth string) error {
-	fls, err := c.egn.itr.ReadDir(1, c.job.BuildId, pth)
-	if err != nil {
-		return err
-	}
-	os.MkdirAll(filepath.Join(c.repopth, pth), 0750)
-	for _, v := range fls {
-		pths := filepath.Join(pth, v.Name)
-		if v.IsDir {
-			err = c.cprepodir(pths)
-		} else {
-			err = c.cprepofl(pths)
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func (c *taskExec) cprepofl(pth string) error {
-	flr, err := c.egn.itr.ReadFile(1, c.job.BuildId, pth)
-	if err != nil {
-		return err
-	}
-	defer flr.Close()
-	flpth := filepath.Join(c.repopth, pth)
-	flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer flr.Close()
-	bts := make([]byte, 10240)
-	for !hbtp.EndContext(c.cmdctx) {
-		rn, err := flr.Read(bts)
-		if rn > 0 {
-			flw.Write(bts[:rn])
-		}
-		if err != nil {
-			break
-		}
-	}
-	return nil
-}
 func (c *taskExec) runJob() {
 	defer func() {
 		c.cmdend = true
@@ -230,6 +163,12 @@ func (c *taskExec) runJob() {
 	err := c.checkRepo()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check repo:%v", err))
+		return
+	}
+
+	err = c.getArts()
+	if err != nil {
+		c.status(common.BuildStatusError, fmt.Sprintf("get use artifacts:%v", err))
 		return
 	}
 
@@ -265,9 +204,11 @@ func (c *taskExec) runJob() {
 		}
 	}
 
-	/*if c.Status != common.BuildStatusOk {
-		logrus.Debugf("cmdExec start err(%d):%s", c.ExitCode, c.Error)
+	err = c.genArts()
+	if err != nil {
+		c.status(common.BuildStatusError, fmt.Sprintf("gen artifacts:%v", err))
 		return
-	}*/
+	}
+
 	c.status(common.BuildStatusOk, "")
 }
