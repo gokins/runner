@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/utils"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gokins-main/core/utils"
 
 	"github.com/gokins-main/core/common"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -74,20 +75,6 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	// c.egn.sysEnv.SetOs() //重设环境变量
-	c.cmdenv = utils.EnvVal{}
-	for _, v := range c.egn.cfg.Env {
-		i := strings.Index(v, "=")
-		if i > 0 {
-			k := v[:i]
-			val := v[i+1:]
-			if val != "" {
-				c.cmdenv[k] = val
-				logrus.Debug("cmd env:", k, "=", val)
-			}
-		}
-	}
-	c.cmdenv["WORKPATH"] = c.wrkpth
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
@@ -146,6 +133,24 @@ func (c *taskExec) updates() error {
 func (c *taskExec) checkStop() bool {
 	return c.egn.itr.CheckCancel(c.job.BuildId)
 }
+func (c *taskExec) initCmdEnv() {
+	c.cmdenv = utils.EnvVal{}
+	for k, v := range c.egn.sysEnv {
+		c.cmdenv[k] = v
+	}
+	for _, v := range c.egn.cfg.Env {
+		i := strings.Index(v, "=")
+		if i > 0 {
+			k := v[:i]
+			val := v[i+1:]
+			if val != "" {
+				c.cmdenv[k] = val
+				logrus.Debug("cmd env:", k, "=", val)
+			}
+		}
+	}
+	c.cmdenv["WORKPATH"] = c.wrkpth
+}
 func (c *taskExec) runJob() {
 	defer func() {
 		c.cmdend = true
@@ -172,6 +177,7 @@ func (c *taskExec) runJob() {
 		return
 	}
 
+	c.initCmdEnv()
 	for _, v := range c.job.Commands {
 		proc := &procExec{
 			prt:  c,
