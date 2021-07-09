@@ -174,7 +174,7 @@ func (c *taskExec) runJob() {
 
 	err = c.getArts()
 	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("get use artifacts:%v", err))
+		c.status(common.BuildStatusError, fmt.Sprintf("use artifacts:%v", err))
 		return
 	}
 
@@ -212,7 +212,7 @@ func (c *taskExec) runJob() {
 
 	err = c.genArts()
 	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("gen artifacts:%v", err))
+		c.status(common.BuildStatusError, fmt.Sprintf("put artifacts:%v", err))
 		return
 	}
 

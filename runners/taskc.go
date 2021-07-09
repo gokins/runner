@@ -121,7 +121,7 @@ func (c *taskExec) getArts() (rterr error) {
 			if err != nil {
 				return err
 			}
-			verid, err := c.egn.itr.FindArtVersionId(c.job.Id, v.Repository, v.Name)
+			verid, err := c.egn.itr.FindArtVersionId(c.job.BuildId, v.Repository, v.Name)
 			if err != nil {
 				return err
 			}
@@ -138,11 +138,11 @@ func (c *taskExec) getArts() (rterr error) {
 				v.SourceStage = c.job.StageName
 			}
 			if v.SourceStep == "" {
-				return errors.New("sourceJob is empty")
+				return fmt.Errorf("'%s' fromStep is empty", c.job.Name)
 			}
 			jid, ok := c.egn.itr.FindJobId(c.job.BuildId, v.SourceStage, v.SourceStep)
 			if !ok {
-				return errors.New("Not Found SourceStep")
+				return fmt.Errorf("'%s' Not Found fromStep '%s->%s'", c.job.Name, v.SourceStage, v.SourceStep)
 			}
 			err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
 			if err != nil {
@@ -153,11 +153,11 @@ func (c *taskExec) getArts() (rterr error) {
 				v.SourceStage = c.job.StageName
 			}
 			if v.SourceStep == "" {
-				return errors.New("sourceJob is empty")
+				return fmt.Errorf("'%s' fromStep is empty", c.job.Name)
 			}
 			jid, ok := c.egn.itr.FindJobId(c.job.BuildId, v.SourceStage, v.SourceStep)
 			if !ok {
-				return errors.New("Not Found SourceStep")
+				return fmt.Errorf("'%s' Not Found fromStep '%s->%s'", c.job.Name, v.SourceStage, v.SourceStep)
 			}
 			val, ok := c.egn.itr.GetEnv(c.job.BuildId, jid, v.Name)
 			if ok {
@@ -192,7 +192,7 @@ func (c *taskExec) genArts() (rterr error) {
 			if err != nil {
 				return err
 			}
-			verid, err := c.egn.itr.NewArtVersionId(c.job.Id, v.Repository, v.Name)
+			verid, err := c.egn.itr.NewArtVersionId(c.job.BuildId, v.Repository, v.Name)
 			if err != nil {
 				return err
 			}
