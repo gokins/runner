@@ -117,17 +117,21 @@ func (c *taskExec) getArts() (rterr error) {
 	for _, v := range c.job.UseArtifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
-			pths, err := c.chkArtPath(v.Path)
-			if err != nil {
-				return err
-			}
 			verid, err := c.egn.itr.FindArtVersionId(c.job.BuildId, v.Repository, v.Name)
 			if err != nil {
 				return err
 			}
-			err = c.copyServDir(2, "/", pths, verid)
-			if err != nil {
-				return err
+			if v.Path == "" {
+				c.cmdenv["ARTIFACT_DOWNURL_"+v.Name] = fmt.Sprintf("%s/api/art/down-dev/%s", c.egn.cfg.ServerUrl, verid)
+			} else {
+				pths, err := c.chkArtPath(v.Path)
+				if err != nil {
+					return err
+				}
+				err = c.copyServDir(2, "/", pths, verid)
+				if err != nil {
+					return err
+				}
 			}
 		case common.ArtsPipeline, common.ArtsPipe:
 			pths, err := c.chkArtPath(v.Path)
