@@ -123,13 +123,17 @@ func (c *taskExec) getArts() (rterr error) {
 			if err != nil {
 				return err
 			}
-			if v.Path == "" {
+			if v.IsUrl || v.Path == "" {
 				tms := time.Now().Format(time.RFC3339Nano)
 				random := utils.RandomString(20)
 				sign := utils.Md5String(verid + tms + random + servinfo.DownToken)
-				ul := fmt.Sprintf("%s/api/art/down-dev/%s?times=%s&random=%s&sign=%s",
-					servinfo.WebHost, verid, tms, random, sign)
-				c.cmdenv["ARTIFACT_DOWNURL_"+v.Name] = ul
+				ul := fmt.Sprintf("%s/api/art/down-dev/%s/%s?times=%s&random=%s&sign=%s",
+					servinfo.WebHost, verid, v.Path, tms, random, sign)
+				als := v.Alias
+				if als == "" {
+					als = v.Name
+				}
+				c.cmdenv["ARTIFACT_DOWNURL_"+als] = ul
 			} else {
 				pths, err := c.chkArtPath(v.Path)
 				if err != nil {
