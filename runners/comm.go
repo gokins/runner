@@ -7,10 +7,11 @@ import (
 )
 
 type UpdateJobInfo struct {
-	Id       string `json:"id"`
+	BuildId  string `json:"buildId"`
+	JobId    string `json:"jobId"`
 	Status   string `json:"status"`
 	Error    string `json:"error"`
-	ExitCode int    `json:"exit_code"`
+	ExitCode int    `json:"exitCode"`
 }
 type RunJob struct {
 	Id           string                 `json:"id"`
@@ -41,15 +42,16 @@ type IExecute interface {
 	PullJob(plugs []string) (*RunJob, error)
 	Update(m *UpdateJobInfo) error
 	CheckCancel(buildId string) bool
-	UpdateCmd(jobid, cmdid string, fs, code int) error // fs:1:run,2:end
-	PushOutLine(jobid, cmdid, bs string, iserr bool) error
+	UpdateCmd(buildId, jobId, cmdid string, fs, code int) error // fs:1:run,2:end
+	PushOutLine(buildId, jobId, cmdid, bs string, iserr bool) error
 	FindJobId(buildId, stgNm, stpNm string) (string, bool)
 
 	ReadDir(fs int, buildId string, pth string) ([]*DirEntry, error)
 	ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error)
-	GetEnv(jobid, key string) (string, bool)
+	GetEnv(buildId, jobId, key string) (string, bool)
+	FindArtVersionId(buildId, idnt string, name string) (string, error)
 
-	FindArtPackId(jobid, idnt string, name string) (string, error)
-	UploadFile(jobid string, name, pth string) (io.WriteCloser, error)
-	GenEnv(jobid string, env utils.EnvVal) error
+	NewArtVersionId(buildId, idnt string, name string) (string, error)
+	UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error)
+	GenEnv(buildId, jobId string, env utils.EnvVal) error
 }

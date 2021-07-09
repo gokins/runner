@@ -124,7 +124,8 @@ func (c *taskExec) updates() error {
 		}
 	}()
 	return c.egn.itr.Update(&UpdateJobInfo{
-		Id:       c.job.Id,
+		BuildId:  c.job.BuildId,
+		JobId:    c.job.Id,
 		Status:   c.Status,
 		Error:    c.Error,
 		ExitCode: c.ExitCode,
@@ -183,7 +184,7 @@ func (c *taskExec) runJob() {
 			cmd:  v,
 			envs: c.job.Env,
 		}
-		err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, 1, 0)
+		err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}
@@ -197,13 +198,13 @@ func (c *taskExec) runJob() {
 				c.status(common.BuildStatusError, err.Error())
 				code = -1
 			}
-			err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, code, c.ExitCode)
+			err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, code, c.ExitCode)
 			if err != nil {
 				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 			}
 			return
 		}
-		err = c.egn.itr.UpdateCmd(c.job.Id, v.Id, 2, c.ExitCode)
+		err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 2, c.ExitCode)
 		if err != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
 		}

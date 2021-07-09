@@ -342,7 +342,7 @@ func (c *procExec) runReadOut(linebuf *bytes.Buffer) bool {
 	return true
 }
 func (c *procExec) pushCmdLine(bs string, iserr bool) {
-	err := c.prt.egn.itr.PushOutLine(c.prt.job.Id, c.cmd.Id, bs, iserr)
+	err := c.prt.egn.itr.PushOutLine(c.prt.job.BuildId, c.prt.job.Id, c.cmd.Id, bs, iserr)
 	if err != nil {
 		logrus.Errorf("procExec PushOutLine err:%v", err)
 	}

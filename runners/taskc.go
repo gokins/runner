@@ -121,7 +121,14 @@ func (c *taskExec) getArts() (rterr error) {
 			if err != nil {
 				return err
 			}
-			println(pths)
+			verid, err := c.egn.itr.FindArtVersionId(c.job.Id, v.Repository, v.Name)
+			if err != nil {
+				return err
+			}
+			err = c.copyServDir(2, "/", pths, verid)
+			if err != nil {
+				return err
+			}
 		case common.ArtsPipeline, common.ArtsPipe:
 			pths, err := c.chkArtPath(v.Path)
 			if err != nil {
@@ -137,7 +144,7 @@ func (c *taskExec) getArts() (rterr error) {
 			if !ok {
 				return errors.New("Not Found SourceStep")
 			}
-			err = c.copyServDir(2, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
+			err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
 			if err != nil {
 				return err
 			}
@@ -152,7 +159,7 @@ func (c *taskExec) getArts() (rterr error) {
 			if !ok {
 				return errors.New("Not Found SourceStep")
 			}
-			val, ok := c.egn.itr.GetEnv(jid, v.Name)
+			val, ok := c.egn.itr.GetEnv(c.job.BuildId, jid, v.Name)
 			if ok {
 				c.cmdenv[v.Name] = val
 			}
@@ -185,16 +192,14 @@ func (c *taskExec) genArts() (rterr error) {
 			if err != nil {
 				return err
 			}
-			pakid, err := c.egn.itr.FindArtPackId(c.job.Id, v.Repository, v.Name)
+			verid, err := c.egn.itr.NewArtVersionId(c.job.Id, v.Repository, v.Name)
 			if err != nil {
 				return err
 			}
-			//TODO: upload pack
-			println(pakid) //?
 			if stat.IsDir() {
-				err = c.uploaddir(v.Name, stat.Name(), pths)
+				err = c.uploaddir(1, verid, stat.Name(), pths)
 			} else {
-				err = c.uploadfl(v.Name, stat.Name(), pths)
+				err = c.uploadfl(1, verid, stat.Name(), pths)
 			}
 			if err != nil {
 				return err
@@ -205,9 +210,9 @@ func (c *taskExec) genArts() (rterr error) {
 				return err
 			}
 			if stat.IsDir() {
-				err = c.uploaddir(v.Name, stat.Name(), pths)
+				err = c.uploaddir(2, v.Name, stat.Name(), pths)
 			} else {
-				err = c.uploadfl(v.Name, stat.Name(), pths)
+				err = c.uploadfl(2, v.Name, stat.Name(), pths)
 			}
 			if err != nil {
 				return err
@@ -218,9 +223,15 @@ func (c *taskExec) genArts() (rterr error) {
 			c.cmdenvlk.RUnlock()
 		}
 	}
-	return c.egn.itr.GenEnv(c.job.Id, env)
+	if len(env) > 0 {
+		err := c.egn.itr.GenEnv(c.job.BuildId, c.job.Id, env)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
-func (c *taskExec) uploaddir(name, pth, flpth string) error {
+func (c *taskExec) uploaddir(fs int, dir, pth, flpth string) error {
 	fls, err := ioutil.ReadDir(flpth)
 	if err != nil {
 		return err
@@ -229,9 +240,9 @@ func (c *taskExec) uploaddir(name, pth, flpth string) error {
 		pths := filepath.Join(pth, v.Name())
 		flpths := filepath.Join(flpth, v.Name())
 		if v.IsDir() {
-			err = c.uploaddir(name, pths, flpths)
+			err = c.uploaddir(fs, dir, pths, flpths)
 		} else {
-			err = c.uploadfl(name, pths, flpths)
+			err = c.uploadfl(fs, dir, pths, flpths)
 		}
 		if err != nil {
 			return err
@@ -239,7 +250,7 @@ func (c *taskExec) uploaddir(name, pth, flpth string) error {
 	}
 	return nil
 }
-func (c *taskExec) uploadfl(name, pth, flpth string) error {
+func (c *taskExec) uploadfl(fs int, dir, pth, flpth string) error {
 	stat, err := os.Stat(flpth)
 	if err != nil {
 		return err
@@ -249,7 +260,7 @@ func (c *taskExec) uploadfl(name, pth, flpth string) error {
 		return err
 	}
 	defer fl.Close()
-	wt, err := c.egn.itr.UploadFile(c.job.Id, name, pth)
+	wt, err := c.egn.itr.UploadFile(fs, c.job.BuildId, c.job.Id, dir, pth)
 	if err != nil {
 		return err
 	}
