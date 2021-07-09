@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"time"
 
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
@@ -114,6 +115,7 @@ func (c *taskExec) getArts() (rterr error) {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
+	servinfo := c.egn.itr.ServerInfo()
 	for _, v := range c.job.UseArtifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
@@ -122,7 +124,12 @@ func (c *taskExec) getArts() (rterr error) {
 				return err
 			}
 			if v.Path == "" {
-				c.cmdenv["ARTIFACT_DOWNURL_"+v.Name] = fmt.Sprintf("%s/api/art/down-dev/%s", c.egn.cfg.ServerUrl, verid)
+				tms := time.Now().Format(time.RFC3339Nano)
+				random := utils.RandomString(20)
+				sign := utils.Md5String(verid + tms + random + servinfo.DownToken)
+				ul := fmt.Sprintf("%s/api/art/down-dev/%s?times=%s&random=%s&sign=%s",
+					servinfo.WebHost, verid, tms, random, sign)
+				c.cmdenv["ARTIFACT_DOWNURL_"+v.Name] = ul
 			} else {
 				pths, err := c.chkArtPath(v.Path)
 				if err != nil {

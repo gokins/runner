@@ -6,24 +6,28 @@ import (
 	"io"
 )
 
+type ServerInfo struct {
+	WebHost   string
+	DownToken string
+}
 type UpdateJobInfo struct {
-	BuildId  string `json:"buildId"`
-	JobId    string `json:"jobId"`
-	Status   string `json:"status"`
-	Error    string `json:"error"`
-	ExitCode int    `json:"exitCode"`
+	BuildId  string
+	JobId    string
+	Status   string
+	Error    string
+	ExitCode int
 }
 type RunJob struct {
-	Id           string                 `json:"id"`
-	StageId      string                 `json:"stageId"`
-	BuildId      string                 `json:"buildId"`
-	StageName    string                 `json:"StageName"`
-	Step         string                 `json:"step"`
-	Name         string                 `json:"name"`
-	Env          map[string]string      `json:"env"`
-	Commands     []*CmdContent          `json:"commands"`
-	Artifacts    []*runtime.Artifact    `json:"artifacts"`
-	UseArtifacts []*runtime.UseArtifact `json:"useArtifacts"`
+	Id           string
+	StageId      string
+	BuildId      string
+	StageName    string
+	Step         string
+	Name         string
+	Env          map[string]string
+	Commands     []*CmdContent
+	Artifacts    []*runtime.Artifact
+	UseArtifacts []*runtime.UseArtifact
 }
 type CmdContent struct {
 	Id string `json:"id"`
@@ -39,6 +43,7 @@ type DirEntry struct {
 	Size  int64
 }
 type IExecute interface {
+	ServerInfo() ServerInfo
 	PullJob(plugs []string) (*RunJob, error)
 	Update(m *UpdateJobInfo) error
 	CheckCancel(buildId string) bool
