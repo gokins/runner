@@ -3,7 +3,6 @@ package runners
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"runtime/debug"
@@ -17,10 +16,11 @@ import (
 )
 
 type sshExec struct {
-	prt  *taskExec
-	ctx  context.Context
-	cncl context.CancelFunc
-	cmd  *CmdContent
+	prt    *taskExec
+	ctx    context.Context
+	cncl   context.CancelFunc
+	cmd    *CmdContent
+	client *ssh.Client
 
 	child  *ssh.Session
 	cmdend time.Time
@@ -60,30 +60,7 @@ func (c *sshExec) start() (rterr error) {
 		return nil
 	}
 	c.ctx, c.cncl = context.WithCancel(c.prt.cmdctx)
-	cfg := &ssh.ClientConfig{
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	host := ""
-	if c.prt.job.Input != nil {
-		host = c.prt.job.Input["host"]
-		cfg.User = c.prt.job.Input["user"]
-		pass := c.prt.job.Input["pass"]
-		if pass != "" {
-			cfg.Auth = []ssh.AuthMethod{
-				ssh.Password(pass),
-			}
-		}
-	}
-	if host == "" {
-		return errors.New("ssh Host is empty")
-	}
-
-	client, err := ssh.Dial("tcp", host, cfg)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-	session, err := client.NewSession()
+	session, err := c.client.NewSession()
 	if err != nil {
 		return err
 	}
@@ -120,12 +97,9 @@ func (c *sshExec) start() (rterr error) {
 			}
 		}
 	}
-	for _, cmd := range c.prt.job.Commands {
-		c.cmd = cmd
-		buf.WriteString(cmd.Conts)
-		buf.WriteString("\n\n\n")
-	}
 
+	buf.WriteString(c.cmd.Conts)
+	buf.WriteString("\n\n\n")
 	cmds := buf.String()
 	err = session.Start(cmds)
 	if err != nil {

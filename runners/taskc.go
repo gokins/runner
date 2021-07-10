@@ -3,6 +3,7 @@ package runners
 import (
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -16,33 +17,36 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (c *taskExec) runSSH() (rterr error) {
+func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
-			logrus.Warnf("taskExec runSSH recover:%v", err)
+			logrus.Warnf("taskExec connSSH recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	for _, v := range c.job.Commands {
-		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
-		if errs != nil {
-			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+
+	cfg := &ssh.ClientConfig{
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	host := ""
+	if c.job.Input != nil {
+		host = c.job.Input["host"]
+		cfg.User = c.job.Input["user"]
+		pass := c.job.Input["pass"]
+		if pass != "" {
+			cfg.Auth = []ssh.AuthMethod{
+				ssh.Password(pass),
+			}
 		}
 	}
-	sshc := &sshExec{
-		prt: c,
+	if host == "" {
+		return nil, errors.New("ssh Host is empty")
 	}
-	err := sshc.start()
-	for _, v := range c.job.Commands {
-		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 2, 0)
-		if errs != nil {
-			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
-		}
-	}
-	return err
+
+	return ssh.Dial("tcp", host, cfg)
 }
-func (c *taskExec) runProcs() (rterr error) {
+func (c *taskExec) runProcs(scli *ssh.Client) (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
@@ -60,16 +64,26 @@ func (c *taskExec) runProcs() (rterr error) {
 			}
 			continue
 		}
-		proc := &procExec{
-			prt: c,
-			cmd: v,
-		}
+
 		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
 		if errs != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
 		}
+		if scli != nil {
+			ex := &sshExec{
+				prt:    c,
+				cmd:    v,
+				client: scli,
+			}
+			err = ex.start()
+		} else {
+			ex := &procExec{
+				prt: c,
+				cmd: v,
+			}
+			err = ex.start()
+		}
 		fs := 2
-		err = proc.start()
 		if err != nil {
 			if hbtp.EndContext(c.cmdctx) {
 				fs = 3

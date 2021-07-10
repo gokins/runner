@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -182,11 +183,16 @@ func (c *taskExec) runJob() {
 		return
 	}
 
+	var scli *ssh.Client
 	if c.job.Step == "shell@ssh" {
-		err = c.runSSH()
-	} else {
-		err = c.runProcs()
+		scli, err = c.connSSH()
+		if err != nil {
+			c.status(common.BuildStatusError, "SSH connect err:"+err.Error())
+			return
+		}
+		defer scli.Close()
 	}
+	err = c.runProcs(scli)
 	if err != nil {
 		if hbtp.EndContext(c.cmdctx) {
 			c.status(common.BuildStatusCancel, err.Error())
