@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -132,7 +133,7 @@ func (c *taskExec) getArts() (rterr error) {
 					pths=pths[1:]
 				}*/
 				ul := fmt.Sprintf("%s/api/art/pub/down/%s/%s?times=%s&random=%s&sign=%s",
-					servinfo.WebHost, verid, v.Path, tms, random, sign)
+					servinfo.WebHost, verid, v.Path, url.QueryEscape(tms), random, sign)
 				als := v.Alias
 				if als == "" {
 					als = v.Name
