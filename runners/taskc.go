@@ -127,7 +127,11 @@ func (c *taskExec) getArts() (rterr error) {
 				tms := time.Now().Format(time.RFC3339Nano)
 				random := utils.RandomString(20)
 				sign := utils.Md5String(verid + tms + random + servinfo.DownToken)
-				ul := fmt.Sprintf("%s/api/art/down-dev/%s/%s?times=%s&random=%s&sign=%s",
+				/*pths:=v.Path
+				if pths[0]=='/'{
+					pths=pths[1:]
+				}*/
+				ul := fmt.Sprintf("%s/api/art/pub/down/%s/%s?times=%s&random=%s&sign=%s",
 					servinfo.WebHost, verid, v.Path, tms, random, sign)
 				als := v.Alias
 				if als == "" {
