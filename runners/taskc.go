@@ -16,6 +16,74 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func (c *taskExec) runSSH() (rterr error) {
+	defer func() {
+		if err := recover(); err != nil {
+			rterr = fmt.Errorf("recover:%v", err)
+			logrus.Warnf("taskExec runSSH recover:%v", err)
+			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
+		}
+	}()
+	for _, v := range c.job.Commands {
+		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
+		if errs != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+		}
+	}
+	sshc := &sshExec{
+		prt: c,
+	}
+	err := sshc.start()
+	for _, v := range c.job.Commands {
+		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 2, 0)
+		if errs != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+		}
+	}
+	return err
+}
+func (c *taskExec) runProcs() (rterr error) {
+	defer func() {
+		if err := recover(); err != nil {
+			rterr = fmt.Errorf("recover:%v", err)
+			logrus.Warnf("taskExec runProcs recover:%v", err)
+			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
+		}
+	}()
+
+	var err error
+	for _, v := range c.job.Commands {
+		if err != nil {
+			errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 3, c.ExitCode)
+			if errs != nil {
+				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+			}
+			continue
+		}
+		proc := &procExec{
+			prt: c,
+			cmd: v,
+		}
+		errs := c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
+		if errs != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+		}
+		fs := 2
+		err = proc.start()
+		if err != nil {
+			if hbtp.EndContext(c.cmdctx) {
+				fs = 3
+			} else {
+				fs = -1
+			}
+		}
+		errs = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, fs, c.ExitCode)
+		if errs != nil {
+			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
+		}
+	}
+	return err
+}
 func (c *taskExec) checkRepo() (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -138,7 +206,9 @@ func (c *taskExec) getArts() (rterr error) {
 				if als == "" {
 					als = v.Name
 				}
-				c.cmdenv["ARTIFACT_DOWNURL_"+als] = ul
+				c.cmdenvlk.Lock()
+				c.cmdenvs["ARTIFACT_DOWNURL_"+als] = ul
+				c.cmdenvlk.Unlock()
 			} else {
 				pths, err := c.chkArtPath(v.Path)
 				if err != nil {
@@ -181,7 +251,9 @@ func (c *taskExec) getArts() (rterr error) {
 			}
 			val, ok := c.egn.itr.GetEnv(c.job.BuildId, jid, v.Name)
 			if ok {
-				c.cmdenv[v.Name] = val
+				c.cmdenvlk.Lock()
+				c.cmdenvs[v.Name] = val
+				c.cmdenvlk.Unlock()
 			}
 		}
 	}

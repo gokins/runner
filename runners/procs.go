@@ -24,7 +24,6 @@ type procExec struct {
 	cmd  *CmdContent
 	ctx  context.Context
 	cncl context.CancelFunc
-	envs map[string]string
 
 	child  *exec.Cmd
 	cmdend time.Time
@@ -141,14 +140,20 @@ func (c *procExec) start() (rterr error) {
 	c.prt.cmdenvlk.RLock()
 	for k, v := range c.prt.cmdenv {
 		_, ok := c.prt.job.Env[k]
-		if !ok && k != "" && v != "" {
+		if !ok && k != "" {
+			envs = append(envs, k+"="+v)
+		}
+	}
+	for k, v := range c.prt.cmdenvs {
+		_, ok := c.prt.job.Env[k]
+		if !ok && k != "" {
 			envs = append(envs, k+"="+v)
 		}
 	}
 	c.prt.cmdenvlk.RUnlock()
 	if c.prt.job.Env != nil && len(c.prt.job.Env) > 0 {
 		for k, v := range c.prt.job.Env {
-			if k != "" && v != "" {
+			if k != "" {
 				logrus.Debugf("put env[%s]:%s", k, v)
 				envs = append(envs, k+"="+v)
 			}

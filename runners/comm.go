@@ -24,6 +24,7 @@ type RunJob struct {
 	StageName    string
 	Step         string
 	Name         string
+	Input        map[string]string
 	Env          map[string]string
 	Commands     []*CmdContent
 	Artifacts    []*runtime.Artifact

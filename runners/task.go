@@ -37,6 +37,7 @@ type taskExec struct {
 	cmdcncl  context.CancelFunc
 	cmdend   bool
 	cmdenv   utils.EnvVal
+	cmdenvs  utils.EnvVal
 	cmdenvlk sync.RWMutex
 }
 
@@ -135,7 +136,10 @@ func (c *taskExec) checkStop() bool {
 	return c.egn.itr.CheckCancel(c.job.BuildId)
 }
 func (c *taskExec) initCmdEnv() {
+	c.cmdenvlk.Lock()
+	defer c.cmdenvlk.Unlock()
 	c.cmdenv = utils.EnvVal{}
+	c.cmdenvs = utils.EnvVal{}
 	for k, v := range c.egn.sysEnv {
 		c.cmdenv[k] = v
 	}
@@ -178,36 +182,18 @@ func (c *taskExec) runJob() {
 		return
 	}
 
-	for _, v := range c.job.Commands {
-		proc := &procExec{
-			prt:  c,
-			cmd:  v,
-			envs: c.job.Env,
+	if c.job.Step == "shell@ssh" {
+		err = c.runSSH()
+	} else {
+		err = c.runProcs()
+	}
+	if err != nil {
+		if hbtp.EndContext(c.cmdctx) {
+			c.status(common.BuildStatusCancel, err.Error())
+		} else {
+			c.status(common.BuildStatusError, err.Error())
 		}
-		err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 1, 0)
-		if err != nil {
-			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
-		}
-		err = proc.start()
-		if err != nil {
-			code := -1
-			if hbtp.EndContext(c.cmdctx) {
-				c.status(common.BuildStatusCancel, err.Error())
-				code = 3
-			} else {
-				c.status(common.BuildStatusError, err.Error())
-				code = -1
-			}
-			err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, code, c.ExitCode)
-			if err != nil {
-				logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
-			}
-			return
-		}
-		err = c.egn.itr.UpdateCmd(c.job.BuildId, c.job.Id, v.Id, 2, c.ExitCode)
-		if err != nil {
-			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", err)
-		}
+		return
 	}
 
 	err = c.genArts()

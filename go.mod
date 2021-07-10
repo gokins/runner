@@ -6,6 +6,7 @@ require (
 	github.com/gokins-main/core v0.0.0-00010101000000-000000000000
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 )
 
 replace github.com/gokins-main/core => ../core
