@@ -5,14 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 type sshExec struct {
@@ -64,10 +65,13 @@ func (c *sshExec) start() (rterr error) {
 	}
 	host := ""
 	if c.prt.job.Input != nil {
-		host = c.prt.job.Input["user"]
+		host = c.prt.job.Input["host"]
 		cfg.User = c.prt.job.Input["user"]
-		cfg.Auth = []ssh.AuthMethod{
-			ssh.Password(c.prt.job.Input["pass"]),
+		pass := c.prt.job.Input["pass"]
+		if pass != "" {
+			cfg.Auth = []ssh.AuthMethod{
+				ssh.Password(pass),
+			}
 		}
 	}
 	if host == "" {
@@ -99,15 +103,20 @@ func (c *sshExec) start() (rterr error) {
 	for k, v := range c.prt.cmdenvs {
 		_, ok := c.prt.job.Env[k]
 		if !ok && k != "" {
-			buf.WriteString(fmt.Sprintf("export %s=%s", k, strings.ReplaceAll(v, "\n", " ")))
+			s := strings.ReplaceAll(v, "'", "\\'")
+			s = strings.ReplaceAll(s, "\n", " ")
+			buf.WriteString(fmt.Sprintf("export %s='%s'", k, s))
+			buf.WriteString("\n")
 		}
 	}
 	c.prt.cmdenvlk.RUnlock()
 	if c.prt.job.Env != nil && len(c.prt.job.Env) > 0 {
 		for k, v := range c.prt.job.Env {
 			if k != "" {
-				logrus.Debugf("put env[%s]:%s", k, v)
-				buf.WriteString(fmt.Sprintf("export %s=%s", k, strings.ReplaceAll(v, "\n", " ")))
+				s := strings.ReplaceAll(v, "'", "\\'")
+				s = strings.ReplaceAll(s, "\n", " ")
+				buf.WriteString(fmt.Sprintf("export %s='%s'", k, s))
+				buf.WriteString("\n")
 			}
 		}
 	}
@@ -117,7 +126,8 @@ func (c *sshExec) start() (rterr error) {
 		buf.WriteString("\n\n\n")
 	}
 
-	err = session.Start(buf.String())
+	cmds := buf.String()
+	err = session.Start(cmds)
 	if err != nil {
 		return err
 	}
@@ -166,7 +176,7 @@ func (c *sshExec) start() (rterr error) {
 		}
 	}
 
-	return nil
+	return cmderr
 }
 func (c *sshExec) runCmd() (rterr error) {
 	defer func() {
