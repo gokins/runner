@@ -46,8 +46,8 @@ type DirEntry struct {
 type IExecute interface {
 	ServerInfo() ServerInfo
 	PullJob(plugs []string) (*RunJob, error)
-	Update(m *UpdateJobInfo) error
 	CheckCancel(buildId string) bool
+	Update(m *UpdateJobInfo) error
 	UpdateCmd(buildId, jobId, cmdId string, fs, code int) error // fs:1:run,2:end
 	PushOutLine(buildId, jobId, cmdId, bs string, iserr bool) error
 	FindJobId(buildId, stgNm, stpNm string) (string, bool)
