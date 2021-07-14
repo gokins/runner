@@ -48,8 +48,8 @@ type IExecute interface {
 	PullJob(plugs []string) (*RunJob, error)
 	Update(m *UpdateJobInfo) error
 	CheckCancel(buildId string) bool
-	UpdateCmd(buildId, jobId, cmdid string, fs, code int) error // fs:1:run,2:end
-	PushOutLine(buildId, jobId, cmdid, bs string, iserr bool) error
+	UpdateCmd(buildId, jobId, cmdId string, fs, code int) error // fs:1:run,2:end
+	PushOutLine(buildId, jobId, cmdId, bs string, iserr bool) error
 	FindJobId(buildId, stgNm, stpNm string) (string, bool)
 
 	ReadDir(fs int, buildId string, pth string) ([]*DirEntry, error)
