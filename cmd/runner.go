@@ -5,7 +5,6 @@ import (
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
 	"io"
 	"strconv"
 )
@@ -14,17 +13,20 @@ type HbtpRunner struct {
 	cfg Config
 }
 
-func (c *HbtpRunner) ServerInfo() runners.ServerInfo {
+func (c *HbtpRunner) ServerInfo() (*runners.ServerInfo, error) {
 	info := &runners.ServerInfo{}
 	err := c.doHbtpJson("ServerInfo", nil, info)
 	if err != nil {
-		logrus.Errorf("hbtp ServerInfo err:%v", err)
+		return nil, err
 	}
-	return *info
+	return info, nil
 }
-func (c *HbtpRunner) PullJob(plugs []string) (*runners.RunJob, error) {
+func (c *HbtpRunner) PullJob(name string, plugs []string) (*runners.RunJob, error) {
 	rt := &runners.RunJob{}
-	err := c.doHbtpJson("PullJob", plugs, rt)
+	err := c.doHbtpJson("PullJob", &runners.ReqPullJob{
+		Name:  name,
+		Plugs: plugs,
+	}, rt)
 	return rt, err
 }
 func (c *HbtpRunner) CheckCancel(buildId string) bool {

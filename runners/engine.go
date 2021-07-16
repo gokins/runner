@@ -3,6 +3,7 @@ package runners
 import (
 	"context"
 	"errors"
+	"github.com/gokins-main/core"
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -32,7 +33,13 @@ func NewEngine(cfg Config, itr IExecute) *Engine {
 		lines: make(map[string]*taskExec),
 	}
 }
-func (c *Engine) Start(ctx context.Context) error {
+func (c *Engine) Run(ctx context.Context) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("Engine Run recover:%v", err)
+			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
+		}
+	}()
 	if c.itr == nil {
 		return errors.New("execute is nil")
 	}
@@ -56,14 +63,13 @@ func (c *Engine) Start(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	logrus.Infof("runner %s start in:%v", c.cfg.Name, c.cfg.Plugin)
 	c.ctx, c.cncl = context.WithCancel(ctx)
-	go func() {
-		c.sysEnv = utils.AllEnv()
-		for !c.Stopd() {
-			c.run()
-			time.Sleep(time.Millisecond * 100)
-		}
-	}()
+	c.sysEnv = utils.AllEnv()
+	for !c.Stopd() {
+		c.run()
+		time.Sleep(time.Millisecond * 100)
+	}
 	return nil
 }
 func (c *Engine) Stopd() bool {
@@ -96,9 +102,11 @@ func (c *Engine) run() {
 		return
 	}
 
-	job, err := c.itr.PullJob(c.cfg.Plugin)
+	job, err := c.itr.PullJob(c.cfg.Name, c.cfg.Plugin)
 	if err != nil {
-		//logrus.Debugf("not pull job:%v", err)
+		if core.IsRunner {
+			logrus.Debugf("not pull job:%v", err)
+		}
 		return
 	}
 

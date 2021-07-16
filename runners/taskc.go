@@ -198,7 +198,10 @@ func (c *taskExec) getArts() (rterr error) {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	servinfo := c.egn.itr.ServerInfo()
+	servinfo, err := c.egn.itr.ServerInfo()
+	if err != nil {
+		return err
+	}
 	for _, v := range c.job.UseArtifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:

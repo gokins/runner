@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
@@ -86,12 +87,24 @@ func (c *procExec) start() (rterr error) {
 		return err
 	}
 
-	name := "sh"
-	pars := []string{"-c"}
+	var name string
+	var pars []string
 	rands := utils.RandomString(10)
 	c.spts = childprefix + rands
+	if runtime.GOOS == "windows" {
+		name = "cmd"
+		pars = []string{"/c"}
+	} else {
+		name = "sh"
+		pars = []string{"-c"}
+	}
+	if c.prt.job.Step == "shell@sh" {
+		name = "sh"
+		pars = []string{"-c"}
+	}
 	if c.prt.job.Step == "shell@bash" {
 		name = "bash"
+		pars = []string{"-c"}
 	}
 	/*if c.prt.job.Step == "shell@docker" {
 		name = "docker"
