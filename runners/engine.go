@@ -3,16 +3,17 @@ package runners
 import (
 	"context"
 	"errors"
-	"github.com/gokins-main/core"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/utils"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/gokins-main/core"
+	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/utils"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
 )
 
 type Engine struct {
@@ -107,6 +108,7 @@ func (c *Engine) run() {
 		if core.IsRunner {
 			logrus.Debugf("not pull job:%v", err)
 		}
+		time.Sleep(time.Second)
 		return
 	}
 

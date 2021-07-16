@@ -3,13 +3,14 @@ package runners
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
@@ -183,9 +184,9 @@ func (c *taskExec) chkArtPath(pth string) (string, error) {
 	stat, err := os.Stat(pths)
 	if err == nil {
 		if stat.IsDir() {
-			return "", nil
+			return pths, nil
 		} else {
-			return "", errors.New("artifact path is not dir")
+			return pths, errors.New("artifact path is not dir")
 		}
 	}
 	return pths, os.MkdirAll(pths, 0750)
@@ -280,7 +281,7 @@ func (c *taskExec) chkArtsPath(pth string) (string, os.FileInfo, error) {
 	pths := filepath.Join(c.repopth, pth)
 	stat, err := os.Stat(pths)
 	if err != nil {
-		return "", nil, err
+		return pths, nil, err
 	}
 	return pths, stat, nil
 }
