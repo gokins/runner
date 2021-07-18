@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
@@ -167,8 +168,22 @@ func (c *procExec) start() (rterr error) {
 	if c.prt.job.Env != nil && len(c.prt.job.Env) > 0 {
 		for k, v := range c.prt.job.Env {
 			if k != "" {
-				logrus.Debugf("put env[%s]:%s", k, v)
-				envs = append(envs, k+"="+v)
+				evs := strings.ReplaceAll(v, "$PATH", c.prt.cmdenv["PATH"])
+				els := common.RegEnv.FindAllStringSubmatch(evs, -1)
+				for _, zs := range els {
+					k := zs[1]
+					if k == "" {
+						continue
+					}
+					vas := ""
+					va, ok := c.prt.cmdenv[k]
+					if ok {
+						vas = va
+					}
+					evs = strings.ReplaceAll(evs, zs[0], vas)
+				}
+				logrus.Debugf("put env[%s]:%s", k, evs)
+				envs = append(envs, k+"="+evs)
 			}
 		}
 	}
