@@ -1,7 +1,7 @@
 package runners
 
 import (
-	"github.com/gokins-main/core/utils"
+	"github.com/gokins/core/utils"
 	"io"
 )
 

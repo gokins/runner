@@ -1,6 +1,6 @@
 package main
 
-import "github.com/gokins-main/runner/cmd"
+import "github.com/gokins/runner/cmd"
 
 func main() {
 	cmd.Run()

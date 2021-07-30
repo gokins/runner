@@ -2,7 +2,7 @@ package runners
 
 import (
 	"encoding/json"
-	"github.com/gokins-main/core/utils"
+	"github.com/gokins/core/utils"
 	"os"
 	"strconv"
 	"time"
