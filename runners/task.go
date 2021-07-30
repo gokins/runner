@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gokins-main/core/utils"
+	"github.com/gokins/core/utils"
 
-	"github.com/gokins-main/core/common"
+	"github.com/gokins/core/common"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )

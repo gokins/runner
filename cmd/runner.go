@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/runner/runners"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"io"
 	"strconv"

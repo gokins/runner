@@ -1,6 +1,6 @@
 package runners
 
-import "github.com/gokins-main/core/runtime"
+import "github.com/gokins/core/runtime"
 
 type ServerInfo struct {
 	WebHost   string
