@@ -59,12 +59,12 @@ func (c *taskExec) run() {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	logrus.Debugf("taskExec run job:%s", c.job.Name)
+	logrus.Debugf("taskExec run job:%s(OriginRepo:%s)", c.job.Name, c.job.OriginRepo)
 	c.wrkpth = filepath.Join(c.egn.cfg.Workspace, common.PathJobs, c.job.Id)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 	if c.job.OriginRepo != "" {
 		_, err := os.Stat(c.job.OriginRepo)
-		if os.IsExist(err) {
+		if err == nil {
 			c.repopth = c.job.OriginRepo
 		}
 	}
