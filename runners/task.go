@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/gokins/core/utils"
 
@@ -61,6 +62,12 @@ func (c *taskExec) run() {
 	logrus.Debugf("taskExec run job:%s", c.job.Name)
 	c.wrkpth = filepath.Join(c.egn.cfg.Workspace, common.PathJobs, c.job.Id)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
+	if c.job.OriginRepo != "" {
+		_, err := os.Stat(c.job.OriginRepo)
+		if os.IsExist(err) {
+			c.repopth = c.job.OriginRepo
+		}
+	}
 	defer os.RemoveAll(c.wrkpth)
 
 	c.cmdend = false
