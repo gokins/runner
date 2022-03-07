@@ -163,6 +163,7 @@ func (c *taskExec) initCmdEnv() {
 		}
 	}
 	c.cmdenv["WORKPATH"] = c.wrkpth
+	c.cmdenv["REPOPATH"] = c.repopth
 }
 func (c *taskExec) runJob() {
 	defer func() {
