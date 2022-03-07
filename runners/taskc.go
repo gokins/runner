@@ -35,9 +35,25 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 		host = c.job.Input["host"]
 		cfg.User = c.job.Input["user"]
 		pass := c.job.Input["pass"]
+		keyfl := c.job.Input["keyFile"]
 		if pass != "" {
 			cfg.Auth = []ssh.AuthMethod{
 				ssh.Password(pass),
+			}
+		} else if keyfl != "" {
+			if keyfl == "user_def_file" {
+				keyfl = "~/.ssh/id_rsa"
+			}
+			keybts, err := ioutil.ReadFile(keyfl)
+			if err != nil {
+				return nil, err
+			}
+			pkey, err := ssh.ParsePrivateKey(keybts)
+			if err != nil {
+				return nil, err
+			}
+			cfg.Auth = []ssh.AuthMethod{
+				ssh.PublicKeys(pkey),
 			}
 		}
 	}
