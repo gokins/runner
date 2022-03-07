@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -42,7 +43,7 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 			}
 		} else if keyfl != "" {
 			if keyfl == "user_def_file" {
-				keyfl = "~/.ssh/id_rsa"
+				keyfl = filepath.Join(utils.HomePath(), ".ssh", "id_rsa")
 			}
 			keybts, err := ioutil.ReadFile(keyfl)
 			if err != nil {
@@ -59,6 +60,9 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 	}
 	if host == "" {
 		return nil, errors.New("ssh Host is empty")
+	}
+	if !strings.Contains(host, ":") {
+		host = host + ":22"
 	}
 
 	return ssh.Dial("tcp", host, cfg)

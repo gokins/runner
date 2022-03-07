@@ -4,18 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gokins/core"
-	utils2 "github.com/gokins/core/utils"
-	"github.com/gokins/runner/runners"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/gokins/core"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/runner/runners"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const Version = "0.1.1"
@@ -110,17 +111,17 @@ func run(pc *kingpin.ParseContext) error {
 		hbtp.Debug = true
 	}
 	if cfg.WorkPath == "" {
-		pth := filepath.Join(utils2.HomePath(), ".gokins")
-		cfg.WorkPath = utils2.EnvDefault("GOKINS_WORKPATH", pth)
+		pth := filepath.Join(utils.HomePath(), ".gokins")
+		cfg.WorkPath = utils.EnvDefault("GOKINS_WORKPATH", pth)
 	}
 	if cfg.Host == "" {
-		cfg.Host = utils2.EnvDefault("GOKINS_SERVHOST", "localhost:8031")
+		cfg.Host = utils.EnvDefault("GOKINS_SERVHOST", "localhost:8031")
 	}
 	if cfg.Secret == "" {
-		cfg.Secret = utils2.EnvDefault("GOKINS_SERVSECRET")
+		cfg.Secret = utils.EnvDefault("GOKINS_SERVSECRET")
 	}
 	if len(cfg.Plugin) <= 0 {
-		plgs := strings.TrimSpace(utils2.EnvDefault("GOKINS_PLUGIN"))
+		plgs := strings.TrimSpace(utils.EnvDefault("GOKINS_PLUGIN"))
 		if plgs != "" {
 			cfg.Plugin = append(cfg.Plugin, plgs)
 		}
