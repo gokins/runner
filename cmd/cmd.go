@@ -105,6 +105,7 @@ func run(pc *kingpin.ParseContext) error {
 	go func() {
 		s := <-csig
 		hbtp.Debugf("get signal(%d):%s", s, s.String())
+		println("get interrupt, start stop runner!!!")
 		runr.Stop()
 	}()
 	if core.Debug {
