@@ -129,10 +129,7 @@ func (c *taskExec) checkRepo() (rterr error) {
 	}()
 	_, err := os.Stat(c.repopth)
 	if err == nil {
-		if c.job.OriginRepo != "" {
-			return nil
-		}
-		return errors.New("path is exist")
+		return nil
 	}
 	return c.copyServDir(1, "/", c.repopth)
 }
