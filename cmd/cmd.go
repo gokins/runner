@@ -145,19 +145,24 @@ func run(pc *kingpin.ParseContext) error {
 			return errors.New("ctx is end")
 		}
 		info, err := itr.ServerInfo()
-		if err == nil {
-			logrus.Infof("check server host ok:%s", info.WebHost)
+		if err != nil {
+			logrus.Errorf("check server err.Please check your host,secret!err:%v", err)
+			time.Sleep(time.Second * 3)
+			continue
+		}
+		logrus.Infof("check server host ok:%s", info.WebHost)
+		runr = runners.NewEngine(runners.Config{
+			Name:      cfg.Name,
+			Workspace: cfg.WorkPath,
+			Limit:     cfg.Limit,
+			Plugin:    cfg.Plugin,
+			Env:       cfg.Env,
+		}, itr)
+		err = runr.Run(ctx)
+		if err != nil {
+			logrus.Errorf("runners Run err:%v",err)
 			break
 		}
-		logrus.Errorf("check server err.Please check your host,secret!err:%v", err)
-		time.Sleep(time.Second * 3)
 	}
-	runr = runners.NewEngine(runners.Config{
-		Name:      cfg.Name,
-		Workspace: cfg.WorkPath,
-		Limit:     cfg.Limit,
-		Plugin:    cfg.Plugin,
-		Env:       cfg.Env,
-	}, itr)
-	return runr.Run(ctx)
+	return nil
 }
