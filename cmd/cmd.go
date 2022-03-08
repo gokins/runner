@@ -110,6 +110,8 @@ func run(pc *kingpin.ParseContext) error {
 		println("get interrupt, start stop runner!!!")
 		runr.Stop()
 		cncl()
+		time.Sleep(time.Second * 3)
+		os.Exit(0)
 	}()
 	if core.Debug {
 		hbtp.Debug = true

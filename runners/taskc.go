@@ -199,6 +199,7 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 			break
 		}
 	}
+	logrus.Debugf("cp file size end:%d/%d", ln, sz)
 	if ln != sz {
 		return fmt.Errorf("cp file size err:%d/%d", ln, sz)
 	}
