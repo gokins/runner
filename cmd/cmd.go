@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gokins/core"
 	"github.com/gokins/core/utils"
@@ -102,11 +103,13 @@ func run(pc *kingpin.ParseContext) error {
 	var runr *runners.Engine
 	csig := make(chan os.Signal, 1)
 	signal.Notify(csig, os.Interrupt, syscall.SIGALRM)
+	ctx, cncl := context.WithCancel(context.Background())
 	go func() {
 		s := <-csig
 		hbtp.Debugf("get signal(%d):%s", s, s.String())
 		println("get interrupt, start stop runner!!!")
 		runr.Stop()
+		cncl()
 	}()
 	if core.Debug {
 		hbtp.Debug = true
@@ -135,12 +138,18 @@ func run(pc *kingpin.ParseContext) error {
 	}
 	core.InitLog(cfg.WorkPath)
 	itr := &HbtpRunner{cfg: cfg}
-	info, err := itr.ServerInfo()
-	if err != nil {
-		logrus.Errorf("check server err.Please check your host,secret!")
-		return err
+	for {
+		if hbtp.EndContext(ctx) {
+			return errors.New("ctx is end")
+		}
+		info, err := itr.ServerInfo()
+		if err == nil {
+			logrus.Infof("check server host ok:%s", info.WebHost)
+			break
+		}
+		logrus.Errorf("check server err.Please check your host,secret!err:%v", err)
+		time.Sleep(time.Second * 3)
 	}
-	logrus.Infof("check server host ok:%s", info.WebHost)
 	runr = runners.NewEngine(runners.Config{
 		Name:      cfg.Name,
 		Workspace: cfg.WorkPath,
@@ -148,5 +157,5 @@ func run(pc *kingpin.ParseContext) error {
 		Plugin:    cfg.Plugin,
 		Env:       cfg.Env,
 	}, itr)
-	return runr.Run(context.Background())
+	return runr.Run(ctx)
 }
