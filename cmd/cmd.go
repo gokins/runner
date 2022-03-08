@@ -108,7 +108,9 @@ func run(pc *kingpin.ParseContext) error {
 		s := <-csig
 		hbtp.Debugf("get signal(%d):%s", s, s.String())
 		println("get interrupt, start stop runner!!!")
-		runr.Stop()
+		if runr != nil {
+			runr.Stop()
+		}
 		cncl()
 		time.Sleep(time.Second * 3)
 		os.Exit(0)
@@ -160,7 +162,7 @@ func run(pc *kingpin.ParseContext) error {
 		}, itr)
 		err = runr.Run(ctx)
 		if err != nil {
-			logrus.Errorf("runners Run err:%v",err)
+			logrus.Errorf("runners Run err:%v", err)
 			break
 		}
 	}
