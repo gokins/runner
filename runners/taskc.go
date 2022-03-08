@@ -128,6 +128,7 @@ func (c *taskExec) checkRepo() (rterr error) {
 		}
 	}()
 	_, err := os.Stat(c.repopth)
+	logrus.Debugf("taskExec.checkRepo(%s) err:%v", c.repopth, err)
 	if err != nil {
 		return c.copyServDir(1, "/", c.repopth)
 	}
@@ -148,7 +149,9 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) 
 	if err != nil {
 		return err
 	}
-	os.MkdirAll(filepath.Join(root2s, pth), 0750)
+	tpth := filepath.Join(root2s, pth)
+	os.MkdirAll(tpth, 0750)
+	logrus.Debugf("copyServDir MkdirAll:%s", tpth)
 	for _, v := range fls {
 		pths := filepath.Join(pth, v.Name)
 		if v.IsDir {
@@ -173,6 +176,7 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 	}
 	defer flr.Close()
 	flpth := filepath.Join(root2s, pth)
+	logrus.Debugf("cprepofl copy:(%s)%s->%s", c.job.BuildId, rpth, flpth)
 	flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
@@ -186,10 +190,11 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 			return errors.New("ctx end")
 		}
 		rn, err := flr.Read(bts)
-		if rn > 0 {
-			wn, _ := flw.Write(bts[:rn])
-			ln += int64(wn)
+		if rn <= 0 {
+			break
 		}
+		wn, _ := flw.Write(bts[:rn])
+		ln += int64(wn)
 		if err != nil {
 			break
 		}
@@ -403,10 +408,11 @@ func (c *taskExec) uploadfl(fs int, dir, pth, flpth string) error {
 			return errors.New("ctx end")
 		}
 		rn, err := fl.Read(bts)
-		if rn > 0 {
-			wn, _ := wt.Write(bts[:rn])
-			ln += int64(wn)
+		if rn <= 0 {
+			break
 		}
+		wn, _ := wt.Write(bts[:rn])
+		ln += int64(wn)
 		if err != nil {
 			break
 		}

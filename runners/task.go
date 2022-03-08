@@ -59,7 +59,6 @@ func (c *taskExec) run() {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	logrus.Debugf("taskExec run job:%s(OriginRepo:%s)", c.job.Name, c.job.OriginRepo)
 	c.wrkpth = filepath.Join(c.egn.cfg.Workspace, common.PathJobs, c.job.Id)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 	if c.job.OriginRepo != "" {
@@ -68,6 +67,7 @@ func (c *taskExec) run() {
 			c.repopth = c.job.OriginRepo
 		}
 	}
+	logrus.Debugf("taskExec run job:%s(OriginRepo:%s)", c.job.Name, c.job.OriginRepo)
 	defer os.RemoveAll(c.wrkpth)
 
 	c.cmdend = false
