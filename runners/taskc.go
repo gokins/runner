@@ -128,10 +128,10 @@ func (c *taskExec) checkRepo() (rterr error) {
 		}
 	}()
 	_, err := os.Stat(c.repopth)
-	if err == nil {
-		return nil
+	if err != nil {
+		return c.copyServDir(1, "/", c.repopth)
 	}
-	return c.copyServDir(1, "/", c.repopth)
+	return nil
 }
 func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) error {
 	defer func() {
