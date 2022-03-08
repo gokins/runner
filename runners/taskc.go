@@ -264,10 +264,6 @@ func (c *taskExec) getArts() (rterr error) {
 				}
 			}
 		case common.ArtsPipeline, common.ArtsPipe:
-			pths, err := c.chkArtPath(v.Path)
-			if err != nil {
-				return err
-			}
 			if v.SourceStage == "" {
 				v.SourceStage = c.job.StageName
 			}
@@ -278,9 +274,32 @@ func (c *taskExec) getArts() (rterr error) {
 			if !ok {
 				return fmt.Errorf("'%s' Not Found fromStep '%s->%s'", c.job.Name, v.SourceStage, v.SourceStep)
 			}
-			err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
-			if err != nil {
-				return err
+			if v.IsUrl || v.Path == "" {
+				tms := time.Now().Format(time.RFC3339Nano)
+				random := utils.RandomString(20)
+				sign := utils.Md5String(jid + tms + random + servinfo.DownToken)
+				/*pths:=v.Path
+				if pths[0]=='/'{
+					pths=pths[1:]
+				}*/
+				ul := fmt.Sprintf("%s/api/art/pub/downs/%s/%s?times=%s&random=%s&sign=%s",
+					servinfo.WebHost, jid, v.Path, url.QueryEscape(tms), random, sign)
+				als := v.Alias
+				if als == "" {
+					als = v.Name
+				}
+				c.cmdenvlk.Lock()
+				c.cmdenvs["ARTIFACT_DOWNURL_"+als] = ul
+				c.cmdenvlk.Unlock()
+			} else {
+				pths, err := c.chkArtPath(v.Path)
+				if err != nil {
+					return err
+				}
+				err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
+				if err != nil {
+					return err
+				}
 			}
 		case common.ArtsVariable, common.ArtsVar:
 			if v.SourceStage == "" {
