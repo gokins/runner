@@ -131,6 +131,7 @@ func (c *taskExec) checkRepo() (rterr error) {
 		return nil
 	}
 	_, err := os.Stat(c.repopth)
+	logrus.Debugf("taskExec.checkRepo(%s) err:%v", c.repopth, err)
 	if err != nil {
 		return c.copyServDir(1, "/", c.repopth)
 	}
@@ -151,7 +152,9 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) 
 	if err != nil {
 		return err
 	}
-	os.MkdirAll(filepath.Join(root2s, pth), 0750)
+	tpth := filepath.Join(root2s, pth)
+	os.MkdirAll(tpth, 0750)
+	logrus.Debugf("copyServDir MkdirAll:%s", tpth)
 	for _, v := range fls {
 		pths := filepath.Join(pth, v.Name)
 		if v.IsDir {
@@ -176,6 +179,7 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 	}
 	defer flr.Close()
 	flpth := filepath.Join(root2s, pth)
+	logrus.Debugf("cprepofl copy:(%s)%s->%s", c.job.BuildId, rpth, flpth)
 	flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
@@ -189,14 +193,16 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 			return errors.New("ctx end")
 		}
 		rn, err := flr.Read(bts)
-		if rn > 0 {
-			wn, _ := flw.Write(bts[:rn])
-			ln += int64(wn)
+		if rn <= 0 {
+			break
 		}
+		wn, _ := flw.Write(bts[:rn])
+		ln += int64(wn)
 		if err != nil {
 			break
 		}
 	}
+	logrus.Debugf("cp file size end:%d/%d", ln, sz)
 	if ln != sz {
 		return fmt.Errorf("cp file size err:%d/%d", ln, sz)
 	}
@@ -261,10 +267,6 @@ func (c *taskExec) getArts() (rterr error) {
 				}
 			}
 		case common.ArtsPipeline, common.ArtsPipe:
-			pths, err := c.chkArtPath(v.Path)
-			if err != nil {
-				return err
-			}
 			if v.SourceStage == "" {
 				v.SourceStage = c.job.StageName
 			}
@@ -275,9 +277,32 @@ func (c *taskExec) getArts() (rterr error) {
 			if !ok {
 				return fmt.Errorf("'%s' Not Found fromStep '%s->%s'", c.job.Name, v.SourceStage, v.SourceStep)
 			}
-			err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
-			if err != nil {
-				return err
+			if v.IsUrl || v.Path == "" {
+				tms := time.Now().Format(time.RFC3339Nano)
+				random := utils.RandomString(20)
+				sign := utils.Md5String(jid + v.Name + tms + random + servinfo.DownToken)
+				/*pths:=v.Path
+				if pths[0]=='/'{
+					pths=pths[1:]
+				}*/
+				ul := fmt.Sprintf("%s/api/art/pub/downs/%s/%s/%s?times=%s&random=%s&sign=%s",
+					servinfo.WebHost, jid, v.Name, v.Path, url.QueryEscape(tms), random, sign)
+				als := v.Alias
+				if als == "" {
+					als = v.Name
+				}
+				c.cmdenvlk.Lock()
+				c.cmdenvs["ARTIFACT_DOWNURL_"+als] = ul
+				c.cmdenvlk.Unlock()
+			} else {
+				pths, err := c.chkArtPath(v.Path)
+				if err != nil {
+					return err
+				}
+				err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
+				if err != nil {
+					return err
+				}
 			}
 		case common.ArtsVariable, common.ArtsVar:
 			if v.SourceStage == "" {
@@ -406,10 +431,11 @@ func (c *taskExec) uploadfl(fs int, dir, pth, flpth string) error {
 			return errors.New("ctx end")
 		}
 		rn, err := fl.Read(bts)
-		if rn > 0 {
-			wn, _ := wt.Write(bts[:rn])
-			ln += int64(wn)
+		if rn <= 0 {
+			break
 		}
+		wn, _ := wt.Write(bts[:rn])
+		ln += int64(wn)
 		if err != nil {
 			break
 		}
