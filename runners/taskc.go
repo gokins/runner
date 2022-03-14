@@ -127,6 +127,9 @@ func (c *taskExec) checkRepo() (rterr error) {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
+	if c.repocpd {
+		return nil
+	}
 	_, err := os.Stat(c.repopth)
 	if err != nil {
 		return c.copyServDir(1, "/", c.repopth)

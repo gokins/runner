@@ -34,6 +34,7 @@ type taskExec struct {
 
 	wrkpth  string //工作地址
 	repopth string //仓库地址
+	repocpd bool   //是否不需要copy
 
 	cmdctx   context.Context
 	cmdcncl  context.CancelFunc
@@ -66,6 +67,14 @@ func (c *taskExec) run() {
 		_, err := os.Stat(c.job.OriginRepo)
 		if err == nil {
 			c.repopth = c.job.OriginRepo
+			c.repocpd=true
+		}
+	}
+	if c.job.UsersRepo != "" {
+		_, err := os.Stat(c.job.UsersRepo)
+		if err == nil {
+			c.repopth = c.job.UsersRepo
+			c.repocpd=true
 		}
 	}
 	defer os.RemoveAll(c.wrkpth)

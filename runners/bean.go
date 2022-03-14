@@ -27,6 +27,7 @@ type RunJob struct {
 	Input        map[string]string
 	Env          map[string]string
 	OriginRepo   string
+	UsersRepo    string
 	Commands     []*CmdContent
 	Artifacts    []*runtime.Artifact
 	UseArtifacts []*runtime.UseArtifact
