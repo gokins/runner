@@ -64,16 +64,18 @@ func (c *taskExec) run() {
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 	if c.job.OriginRepo != "" {
 		_, err := os.Stat(c.job.OriginRepo)
+		logrus.Debugf("task(%s) in OriginRepo err:%s,err=%v", c.job.Id, c.job.OriginRepo, err)
 		if err == nil {
 			c.repopth = c.job.OriginRepo
-			c.repocpd=true
+			c.repocpd = true
 		}
 	}
 	if c.job.UsersRepo != "" {
 		_, err := os.Stat(c.job.UsersRepo)
+		logrus.Debugf("task(%s) in UsersRepo err:%s,err=%v", c.job.Id, c.job.UsersRepo, err)
 		if err == nil {
 			c.repopth = c.job.UsersRepo
-			c.repocpd=true
+			c.repocpd = true
 		}
 	}
 	logrus.Debugf("taskExec run job:%s(OriginRepo:%s)", c.job.Name, c.job.OriginRepo)
