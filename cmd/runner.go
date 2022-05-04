@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"strconv"
+
 	"github.com/gokins/core/utils"
 	"github.com/gokins/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"io"
-	"strconv"
 )
 
 type HbtpRunner struct {
@@ -108,16 +109,16 @@ func (c *HbtpRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 }
 func (c *HbtpRunner) ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error) {
 	req := c.newHbtpReq("ReadFile")
-	req.ReqHeader().Set("buildId", buildId)
-	req.ReqHeader().Set("pth", pth)
-	req.ReqHeader().Set("fs", fs)
-	err := req.Do(nil, nil)
+	req.Header().Set("buildId", buildId)
+	req.Header().Set("pth", pth)
+	req.Header().Set("fs", fs)
+	res, err := req.Do(nil, nil)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer req.Close()
-	rs := string(req.ResBodyBytes())
-	if req.ResCode() != hbtp.ResStatusOk {
+	rs := string(res.BodyBytes())
+	if res.Code() != hbtp.ResStatusOk {
 		return 0, nil, fmt.Errorf("%s", rs)
 	}
 	sz, err := strconv.ParseInt(rs, 10, 64)
@@ -156,18 +157,18 @@ func (c *HbtpRunner) GenEnv(buildId, jobId string, env utils.EnvVal) error {
 }
 func (c *HbtpRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error) {
 	req := c.newHbtpReq("UploadFile")
-	req.ReqHeader().Set("buildId", buildId)
-	req.ReqHeader().Set("jobId", jobId)
-	req.ReqHeader().Set("dir", dir)
-	req.ReqHeader().Set("pth", pth)
-	req.ReqHeader().Set("fs", fs)
-	err := req.Do(nil, nil)
+	req.Header().Set("buildId", buildId)
+	req.Header().Set("jobId", jobId)
+	req.Header().Set("dir", dir)
+	req.Header().Set("pth", pth)
+	req.Header().Set("fs", fs)
+	res, err := req.Do(nil, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer req.Close()
-	rs := string(req.ResBodyBytes())
-	if req.ResCode() != hbtp.ResStatusOk {
+	rs := string(res.BodyBytes())
+	if res.Code() != hbtp.ResStatusOk {
 		return nil, fmt.Errorf("%s", rs)
 	}
 	return req.Conn(true), nil
