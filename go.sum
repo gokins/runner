@@ -9,6 +9,8 @@ github.com/gokins/core v0.0.0-20210730105437-f83bf70e44ae h1:4TdUmWsLBeV4DJtAuip
 github.com/gokins/core v0.0.0-20210730105437-f83bf70e44ae/go.mod h1:zB+5ezSWcHTCsEIyQD30jUBFBo98htP3Ft0GqcdAbf8=
 github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5 h1:nawi1rry9ckqP+HAhan81DWA1WSafI0Pak/Ko68baYQ=
 github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5/go.mod h1:U2OZ06VD1PHu3ZLZ8tuEHooaOZnoke/4ZKAZfL44bUQ=
+github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.6-0.20220418043654-6aa5bdf22708 h1:f76wvuOE/oF3Y9iK2umJktZbb/pHDoIXhURq+sqIFdw=
+github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.6-0.20220418043654-6aa5bdf22708/go.mod h1:U2OZ06VD1PHu3ZLZ8tuEHooaOZnoke/4ZKAZfL44bUQ=
 github.com/mgr9525/logrus-file-hook v0.0.0-20210315103109-42681d084c3b h1:sGrxWDbhC2XpDKOLdNrYVo3Ga9YIFMr0AfjnP2gli0o=
 github.com/mgr9525/logrus-file-hook v0.0.0-20210315103109-42681d084c3b/go.mod h1:HVZotikIVp6fGh+N2AU+jWHhT5ucVyk67MsPEP4MZWg=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
