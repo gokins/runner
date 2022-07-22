@@ -107,16 +107,17 @@ func (c *HbtpRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	}
 	return rts, nil
 }
-func (c *HbtpRunner) ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error) {
+func (c *HbtpRunner) ReadFile(fs int, buildId string, pth string, start int64) (int64, io.ReadCloser, error) {
 	req := c.newHbtpReq("ReadFile")
 	req.Header().Set("buildId", buildId)
 	req.Header().Set("pth", pth)
 	req.Header().Set("fs", fs)
+	req.Header().Set("start", start)
 	res, err := req.Do(nil, nil)
 	if err != nil {
 		return 0, nil, err
 	}
-	defer req.Close()
+	defer res.Close()
 	rs := string(res.BodyBytes())
 	if res.Code() != hbtp.ResStatusOk {
 		return 0, nil, fmt.Errorf("%s", rs)
@@ -125,7 +126,7 @@ func (c *HbtpRunner) ReadFile(fs int, buildId string, pth string) (int64, io.Rea
 	if err != nil {
 		return 0, nil, err
 	}
-	return sz, req.Conn(true), nil
+	return sz, res.Conn(true), nil
 }
 func (c *HbtpRunner) GetEnv(buildId, jobId, key string) (string, bool) {
 	code, bts, err := c.doHbtpString("GetEnv", nil, hbtp.Map{
@@ -155,8 +156,8 @@ func (c *HbtpRunner) GenEnv(buildId, jobId string, env utils.EnvVal) error {
 	}
 	return nil
 }
-func (c *HbtpRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error) {
-	req := c.newHbtpReq("UploadFile")
+func (c *HbtpRunner) StatFile(fs int, buildId, jobId string, dir, pth string) (*runners.FileStat, error) {
+	req := c.newHbtpReq("StatFile")
 	req.Header().Set("buildId", buildId)
 	req.Header().Set("jobId", jobId)
 	req.Header().Set("dir", dir)
@@ -166,12 +167,33 @@ func (c *HbtpRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) 
 	if err != nil {
 		return nil, err
 	}
-	defer req.Close()
+	defer res.Close()
 	rs := string(res.BodyBytes())
 	if res.Code() != hbtp.ResStatusOk {
 		return nil, fmt.Errorf("%s", rs)
 	}
-	return req.Conn(true), nil
+	stat := &runners.FileStat{}
+	err = res.BodyJson(stat)
+	return stat, err
+}
+func (c *HbtpRunner) UploadFile(fs int, buildId, jobId string, dir, pth string, start int64) (io.WriteCloser, error) {
+	req := c.newHbtpReq("UploadFile")
+	req.Header().Set("buildId", buildId)
+	req.Header().Set("jobId", jobId)
+	req.Header().Set("dir", dir)
+	req.Header().Set("pth", pth)
+	req.Header().Set("fs", fs)
+	req.Header().Set("start", start)
+	res, err := req.Do(nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+	rs := string(res.BodyBytes())
+	if res.Code() != hbtp.ResStatusOk {
+		return nil, fmt.Errorf("%s", rs)
+	}
+	return res.Conn(true), nil
 }
 func (c *HbtpRunner) FindArtVersionId(buildId, idnt string, name string) (string, error) {
 	code, bts, err := c.doHbtpString("FindArtVersionId", nil, hbtp.Map{

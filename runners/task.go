@@ -95,9 +95,14 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
+	if len(c.job.Commands) <= 0 {
+		c.status(common.BuildStatusError, "not found any commands")
+		return
+	}
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
+	c.initCmdEnv()
 	go c.runJob()
 	for !hbtp.EndContext(c.egn.ctx) && !c.cmdend {
 		time.Sleep(time.Millisecond * 100)
@@ -185,11 +190,6 @@ func (c *taskExec) runJob() {
 		}
 	}()
 
-	if len(c.job.Commands) <= 0 {
-		c.status(common.BuildStatusError, "not found any commands")
-		return
-	}
-	c.initCmdEnv()
 	err := c.checkRepo()
 	if err != nil {
 		c.status(common.BuildStatusError, fmt.Sprintf("check repo:%v", err))
@@ -228,4 +228,14 @@ func (c *taskExec) runJob() {
 	}
 
 	c.status(common.BuildStatusOk, "")
+}
+
+func (c *taskExec) runJobSSH() {
+	defer func() {
+		c.cmdend = true
+		if err := recover(); err != nil {
+			logrus.Warnf("taskExec runJob recover:%v", err)
+			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
+		}
+	}()
 }

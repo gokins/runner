@@ -1,8 +1,9 @@
 package runners
 
 import (
-	"github.com/gokins/core/utils"
 	"io"
+
+	"github.com/gokins/core/utils"
 )
 
 type IExecute interface {
@@ -15,11 +16,12 @@ type IExecute interface {
 	FindJobId(buildId, stgNm, stpNm string) (string, bool)
 
 	ReadDir(fs int, buildId string, pth string) ([]*DirEntry, error)
-	ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error)
+	ReadFile(fs int, buildId string, pth string, start int64) (int64, io.ReadCloser, error)
 	GetEnv(buildId, jobId, key string) (string, bool)
 	FindArtVersionId(buildId, idnt string, name string) (string, error)
 
 	NewArtVersionId(buildId, idnt string, name string) (string, error)
-	UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error)
+	StatFile(fs int, buildId, jobId string, dir, pth string) (*FileStat, error)
+	UploadFile(fs int, buildId, jobId string, dir, pth string, start int64) (io.WriteCloser, error)
 	GenEnv(buildId, jobId string, env utils.EnvVal) error
 }

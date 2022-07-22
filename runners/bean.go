@@ -45,3 +45,9 @@ type DirEntry struct {
 	IsDir bool
 	Size  int64
 }
+
+type FileStat struct {
+	Name  string
+	IsDir bool
+	Size  int64
+}

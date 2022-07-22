@@ -3,6 +3,7 @@ package runners
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -169,24 +170,41 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) 
 	return nil
 }
 func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) error {
+	var err error
+	for i := 0; i < 5; i++ {
+		err = c.cprepoFile(fs, pth, root2s, rmtPrefix...)
+		if err == nil {
+			break
+		}
+	}
+	return err
+}
+func (c *taskExec) cprepoFile(fs int, pth, root2s string, rmtPrefix ...string) error {
 	rpth := pth
 	if len(rmtPrefix) > 0 && rmtPrefix[0] != "" {
 		rpth = filepath.Join(rmtPrefix[0], pth)
 	}
-	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, rpth)
+	flpth := filepath.Join(root2s, pth)
+	stat, err := os.Stat(flpth)
+	ln := int64(0)
+	if err == nil {
+		ln = stat.Size()
+	}
+	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, rpth, ln)
 	if err != nil {
 		return err
 	}
 	defer flr.Close()
-	flpth := filepath.Join(root2s, pth)
 	logrus.Debugf("cprepofl copy:(%s)%s->%s", c.job.BuildId, rpth, flpth)
 	flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}
 	defer flr.Close()
+	if ln > 0 {
+		flw.Seek(ln, io.SeekStart)
+	}
 
-	ln := int64(0)
 	bts := make([]byte, 10240)
 	for {
 		if hbtp.EndContext(c.cmdctx) {
@@ -409,22 +427,39 @@ func (c *taskExec) uploaddir(fs int, dir, pth, flpth string) error {
 	return nil
 }
 func (c *taskExec) uploadfl(fs int, dir, pth, flpth string) error {
+	var err error
+	for i := 0; i < 5; i++ {
+		err = c.uploadFile(fs, dir, pth, flpth)
+		if err == nil {
+			break
+		}
+	}
+	return err
+}
+func (c *taskExec) uploadFile(fs int, dir, pth, flpth string) error {
 	stat, err := os.Stat(flpth)
 	if err != nil {
 		return err
+	}
+	ln := int64(0)
+	stats, err := c.egn.itr.StatFile(fs, c.job.BuildId, c.job.Id, dir, pth)
+	if err == nil {
+		ln = stats.Size
 	}
 	fl, err := os.Open(flpth)
 	if err != nil {
 		return err
 	}
 	defer fl.Close()
-	wt, err := c.egn.itr.UploadFile(fs, c.job.BuildId, c.job.Id, dir, pth)
+	if ln > 0 {
+		fl.Seek(ln, io.SeekStart)
+	}
+	wt, err := c.egn.itr.UploadFile(fs, c.job.BuildId, c.job.Id, dir, pth, ln)
 	if err != nil {
 		return err
 	}
 	defer wt.Close()
 
-	ln := int64(0)
 	bts := make([]byte, 10240)
 	for {
 		if hbtp.EndContext(c.cmdctx) {
