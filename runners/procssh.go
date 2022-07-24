@@ -76,14 +76,18 @@ func (c *sshExec) start() (rterr error) {
 
 	c.child = session
 	buf := &bytes.Buffer{}
-	if c.prt.job.Input != nil {
+	dirs := c.prt.repopth
+	/* if c.prt.job.Input != nil {
 		dirs := c.prt.job.Input["workspace"]
-		if dirs != "" {
-			s := strings.ReplaceAll(dirs, "'", "")
-			s = strings.ReplaceAll(s, "\n", " ")
-			buf.WriteString(fmt.Sprintf("cd '%s'", s))
-			buf.WriteString("\n")
+		if dirs == "" {
+			dirs = c.prt.job.UsersRepo
 		}
+	} */
+	if dirs != "" {
+		s := strings.ReplaceAll(dirs, "'", "")
+		s = strings.ReplaceAll(s, "\n", " ")
+		buf.WriteString(fmt.Sprintf("cd '%s'", s))
+		buf.WriteString("\n")
 	}
 	c.prt.cmdenvlk.RLock()
 	for k, v := range c.prt.cmdenvs {

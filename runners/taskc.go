@@ -12,63 +12,15 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/ssh"
-
 	"github.com/gokins/core/common"
+	"github.com/gokins/core/runtime"
 	"github.com/gokins/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/pkg/sftp"
 	"github.com/sirupsen/logrus"
 )
 
-func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
-	defer func() {
-		if err := recover(); err != nil {
-			rterr = fmt.Errorf("recover:%v", err)
-			logrus.Warnf("taskExec connSSH recover:%v", err)
-			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
-		}
-	}()
-
-	cfg := &ssh.ClientConfig{
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	host := ""
-	if c.job.Input != nil {
-		host = c.job.Input["host"]
-		cfg.User = c.job.Input["user"]
-		pass := c.job.Input["pass"]
-		keyfl := c.job.Input["keyFile"]
-		if pass != "" {
-			cfg.Auth = []ssh.AuthMethod{
-				ssh.Password(pass),
-			}
-		} else if keyfl != "" {
-			if keyfl == "user_def_file" {
-				keyfl = filepath.Join(utils.HomePath(), ".ssh", "id_rsa")
-			}
-			keybts, err := ioutil.ReadFile(keyfl)
-			if err != nil {
-				return nil, err
-			}
-			pkey, err := ssh.ParsePrivateKey(keybts)
-			if err != nil {
-				return nil, err
-			}
-			cfg.Auth = []ssh.AuthMethod{
-				ssh.PublicKeys(pkey),
-			}
-		}
-	}
-	if host == "" {
-		return nil, errors.New("ssh Host is empty")
-	}
-	if !strings.Contains(host, ":") {
-		host = host + ":22"
-	}
-
-	return ssh.Dial("tcp", host, cfg)
-}
-func (c *taskExec) runProcs(scli *ssh.Client) (rterr error) {
+func (c *taskExec) runProcs() (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
@@ -91,11 +43,11 @@ func (c *taskExec) runProcs(scli *ssh.Client) (rterr error) {
 		if errs != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
 		}
-		if scli != nil {
+		if c.sshcli != nil {
 			ex := &sshExec{
 				prt:    c,
 				cmd:    v,
-				client: scli,
+				client: c.sshcli,
 			}
 			err = ex.start()
 		} else {
@@ -171,7 +123,11 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) 
 }
 func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) error {
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
+		if hbtp.EndContext(c.cmdctx) {
+			err = fmt.Errorf("ctx end")
+			break
+		}
 		err = c.cprepoFile(fs, pth, root2s, rmtPrefix...)
 		if err == nil {
 			break
@@ -194,13 +150,19 @@ func (c *taskExec) cprepoFile(fs int, pth, root2s string, rmtPrefix ...string) e
 	if err != nil {
 		return err
 	}
+	if sz == ln {
+		return nil
+	}
+	if ln > sz {
+		os.RemoveAll(flpth)
+	}
 	defer flr.Close()
 	logrus.Debugf("cprepofl copy:(%s)%s->%s", c.job.BuildId, rpth, flpth)
 	flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}
-	defer flr.Close()
+	defer flw.Close()
 	if ln > 0 {
 		flw.Seek(ln, io.SeekStart)
 	}
@@ -227,7 +189,10 @@ func (c *taskExec) cprepoFile(fs int, pth, root2s string, rmtPrefix ...string) e
 	return nil
 }
 func (c *taskExec) chkArtPath(pth string) (string, error) {
-	pths := filepath.Join(c.repopth, pth)
+	pths := pth
+	if !strings.HasPrefix(pth, "/") {
+		pths = filepath.Join(c.repopth, pth)
+	}
 	stat, err := os.Stat(pths)
 	if err == nil {
 		if stat.IsDir() {
@@ -237,6 +202,33 @@ func (c *taskExec) chkArtPath(pth string) (string, error) {
 		}
 	}
 	return pths, os.MkdirAll(pths, 0750)
+}
+func (c *taskExec) getArtsFiles(v *runtime.UseArtifact, fs int, rmtPrefix string) error {
+	if c.sshcli == nil {
+		pths, err := c.chkArtPath(v.Path)
+		if err != nil {
+			return err
+		}
+		err = c.copyServDir(2, "/", pths, rmtPrefix)
+		if err != nil {
+			return err
+		}
+	} else {
+		stpcli, err := sftp.NewClient(c.sshcli)
+		if err != nil {
+			return err
+		}
+		defer stpcli.Close()
+		pths, err := c.chkArtPathSSH(stpcli, v.Path)
+		if err != nil {
+			return err
+		}
+		err = c.copyServDirSSH(stpcli, fs, "/", pths, rmtPrefix)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 func (c *taskExec) getArts() (rterr error) {
 	defer func() {
@@ -275,14 +267,18 @@ func (c *taskExec) getArts() (rterr error) {
 				c.cmdenvs["ARTIFACT_DOWNURL_"+als] = ul
 				c.cmdenvlk.Unlock()
 			} else {
-				pths, err := c.chkArtPath(v.Path)
+				err = c.getArtsFiles(v, 2, verid)
+				if err != nil {
+					return err
+				}
+				/* pths, err := c.chkArtPath(v.Path)
 				if err != nil {
 					return err
 				}
 				err = c.copyServDir(2, "/", pths, verid)
 				if err != nil {
 					return err
-				}
+				} */
 			}
 		case common.ArtsPipeline, common.ArtsPipe:
 			if v.SourceStage == "" {
@@ -313,14 +309,18 @@ func (c *taskExec) getArts() (rterr error) {
 				c.cmdenvs["ARTIFACT_DOWNURL_"+als] = ul
 				c.cmdenvlk.Unlock()
 			} else {
-				pths, err := c.chkArtPath(v.Path)
+				err = c.getArtsFiles(v, 3, filepath.Join("/", jid, common.PathArts, v.Name))
+				if err != nil {
+					return err
+				}
+				/* pths, err := c.chkArtPath(v.Path)
 				if err != nil {
 					return err
 				}
 				err = c.copyServDir(3, "/", pths, filepath.Join("/", jid, common.PathArts, v.Name))
 				if err != nil {
 					return err
-				}
+				} */
 			}
 		case common.ArtsVariable, common.ArtsVar:
 			if v.SourceStage == "" {
@@ -351,6 +351,41 @@ func (c *taskExec) chkArtsPath(pth string) (string, os.FileInfo, error) {
 	}
 	return pths, stat, nil
 }
+func (c *taskExec) genArtsFiles(v *runtime.Artifact, fs int, name string) error {
+	if c.sshcli == nil {
+		pths, stat, err := c.chkArtsPath(v.Path)
+		if err != nil {
+			return err
+		}
+		if stat.IsDir() {
+			err = c.uploaddir(fs, name, stat.Name(), pths)
+		} else {
+			err = c.uploadfl(fs, name, stat.Name(), pths)
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		stpcli, err := sftp.NewClient(c.sshcli)
+		if err != nil {
+			return err
+		}
+		defer stpcli.Close()
+		pths, stat, err := c.chkArtsPathSSH(stpcli, v.Path)
+		if err != nil {
+			return err
+		}
+		if stat.IsDir() {
+			err = c.uploaddirSSH(stpcli, fs, name, stat.Name(), pths)
+		} else {
+			err = c.uploadflSSH(stpcli, fs, name, stat.Name(), pths)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (c *taskExec) genArts() (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -364,11 +399,15 @@ func (c *taskExec) genArts() (rterr error) {
 	for _, v := range c.job.Artifacts {
 		switch v.Scope {
 		case common.ArtsArchive, common.ArtsRepo:
-			pths, stat, err := c.chkArtsPath(v.Path)
+			verid, err := c.egn.itr.NewArtVersionId(c.job.BuildId, v.Repository, v.Name)
 			if err != nil {
 				return err
 			}
-			verid, err := c.egn.itr.NewArtVersionId(c.job.BuildId, v.Repository, v.Name)
+			err = c.genArtsFiles(v, 1, verid)
+			if err != nil {
+				return err
+			}
+			/* pths, stat, err := c.chkArtsPath(v.Path)
 			if err != nil {
 				return err
 			}
@@ -379,9 +418,13 @@ func (c *taskExec) genArts() (rterr error) {
 			}
 			if err != nil {
 				return err
-			}
+			} */
 		case common.ArtsPipeline, common.ArtsPipe:
-			pths, stat, err := c.chkArtsPath(v.Path)
+			err := c.genArtsFiles(v, 2, v.Name)
+			if err != nil {
+				return err
+			}
+			/* pths, stat, err := c.chkArtsPath(v.Path)
 			if err != nil {
 				return err
 			}
@@ -392,7 +435,7 @@ func (c *taskExec) genArts() (rterr error) {
 			}
 			if err != nil {
 				return err
-			}
+			} */
 		case common.ArtsVariable, common.ArtsVar:
 			c.cmdenvlk.RLock()
 			env[v.Name] = c.cmdenv[v.Name]
@@ -428,7 +471,11 @@ func (c *taskExec) uploaddir(fs int, dir, pth, flpth string) error {
 }
 func (c *taskExec) uploadfl(fs int, dir, pth, flpth string) error {
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
+		if hbtp.EndContext(c.cmdctx) {
+			err = fmt.Errorf("ctx end")
+			break
+		}
 		err = c.uploadFile(fs, dir, pth, flpth)
 		if err == nil {
 			break
@@ -442,9 +489,16 @@ func (c *taskExec) uploadFile(fs int, dir, pth, flpth string) error {
 		return err
 	}
 	ln := int64(0)
+	sz := stat.Size()
 	stats, err := c.egn.itr.StatFile(fs, c.job.BuildId, c.job.Id, dir, pth)
 	if err == nil {
 		ln = stats.Size
+	}
+	if sz == ln {
+		return nil
+	}
+	if ln > sz {
+		ln = 0
 	}
 	fl, err := os.Open(flpth)
 	if err != nil {

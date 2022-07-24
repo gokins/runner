@@ -11,9 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/crypto/ssh"
-
 	"github.com/gokins/core/utils"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/gokins/core/common"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -36,6 +35,7 @@ type taskExec struct {
 	repopth string //仓库地址
 	repocpd bool   //是否不需要copy
 
+	sshcli   *ssh.Client
 	cmdctx   context.Context
 	cmdcncl  context.CancelFunc
 	cmdend   bool
@@ -102,7 +102,6 @@ func (c *taskExec) run() {
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
-	c.initCmdEnv()
 	go c.runJob()
 	for !hbtp.EndContext(c.egn.ctx) && !c.cmdend {
 		time.Sleep(time.Millisecond * 100)
@@ -182,60 +181,47 @@ func (c *taskExec) initCmdEnv() {
 	c.cmdenv["REPOPATH"] = c.repopth
 }
 func (c *taskExec) runJob() {
+	c.initCmdEnv()
+	stat, errs := c.runJobs()
+	c.status(stat, errs)
+	c.cmdend = true
+}
+
+func (c *taskExec) runJobs() (rt1 string, rt2 string) {
 	defer func() {
-		c.cmdend = true
 		if err := recover(); err != nil {
-			logrus.Warnf("taskExec runJob recover:%v", err)
+			rt1 = common.BuildStatusError
+			rt2 = fmt.Sprintf("taskExec runJobSSH recover:%v", err)
+			logrus.Warnf("taskExec runJobSSH recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
 
-	err := c.checkRepo()
-	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("check repo:%v", err))
-		return
-	}
-
-	err = c.getArts()
-	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("use artifacts:%v", err))
-		return
-	}
-
-	var scli *ssh.Client
 	if c.job.Step == "shell@ssh" {
-		scli, err = c.connSSH()
+		scli, err := c.connSSH()
 		if err != nil {
-			c.status(common.BuildStatusError, "SSH connect err:"+err.Error())
-			return
+			return common.BuildStatusError, fmt.Sprintf("SSH connect err:%v", err)
 		}
+		c.sshcli = scli
 		defer scli.Close()
 	}
-	err = c.runProcs(scli)
+
+	err := c.getArts()
+	if err != nil {
+		return common.BuildStatusError, fmt.Sprintf("use artifacts:%v", err)
+	}
+	err = c.runProcs()
 	if err != nil {
 		if hbtp.EndContext(c.cmdctx) {
-			c.status(common.BuildStatusCancel, err.Error())
+			return common.BuildStatusCancel, fmt.Sprintf("cancel success:%v", err)
 		} else {
-			c.status(common.BuildStatusError, err.Error())
+			return common.BuildStatusCancel, fmt.Sprintf("run command:%v", err)
 		}
-		return
 	}
 
 	err = c.genArts()
 	if err != nil {
-		c.status(common.BuildStatusError, fmt.Sprintf("put artifacts:%v", err))
-		return
+		return common.BuildStatusError, fmt.Sprintf("put artifacts:%v", err)
 	}
-
-	c.status(common.BuildStatusOk, "")
-}
-
-func (c *taskExec) runJobSSH() {
-	defer func() {
-		c.cmdend = true
-		if err := recover(); err != nil {
-			logrus.Warnf("taskExec runJob recover:%v", err)
-			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
-		}
-	}()
+	return common.BuildStatusOk, ""
 }
