@@ -116,6 +116,7 @@ func (c *taskExec) copyServDir(fs int, pth, root2s string, rmtPrefix ...string) 
 			err = c.cprepofl(fs, pths, root2s, rmtPrefix...)
 		}
 		if err != nil {
+			// os.RemoveAll(tpth)
 			return err
 		}
 	}

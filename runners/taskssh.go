@@ -109,6 +109,7 @@ func (c *taskExec) copyServDirSSH(stpcli *sftp.Client, fs int, pth, root2s strin
 			err = c.cprepoflSSH(stpcli, fs, pths, root2s, rmtPrefix...)
 		}
 		if err != nil {
+			// stpcli.RemoveDirectory(tpth)
 			return err
 		}
 	}
