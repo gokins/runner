@@ -195,7 +195,9 @@ func (c *taskExec) cprepoFile(idx int, fs int, pth, root2s string, rmtPrefix ...
 }
 func (c *taskExec) chkArtPath(pth string) (string, error) {
 	pths := pth
-	if !strings.HasPrefix(pth, "/") {
+	if pth == "." {
+		pths = c.repopth
+	} else if !strings.HasPrefix(pth, "/") {
 		pths = filepath.Join(c.repopth, pth)
 	}
 	stat, err := os.Stat(pths)

@@ -69,7 +69,9 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 
 func (c *taskExec) chkArtPathSSH(stpcli *sftp.Client, pth string) (string, error) {
 	pths := pth
-	if !strings.HasPrefix(pth, "/") {
+	if pth == "." {
+		pths = c.job.UsersRepo
+	} else if !strings.HasPrefix(pth, "/") {
 		pths = filepath.Join(c.job.UsersRepo, pth)
 	}
 	stat, err := stpcli.Stat(utils.RepSeparators(pths))
