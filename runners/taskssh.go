@@ -72,7 +72,7 @@ func (c *taskExec) chkArtPathSSH(stpcli *sftp.Client, pth string) (string, error
 	if !strings.HasPrefix(pth, "/") {
 		pths = filepath.Join(c.job.UsersRepo, pth)
 	}
-	stat, err := stpcli.Stat(pths)
+	stat, err := stpcli.Stat(utils.RepSeparators(pths))
 	if err == nil {
 		if stat.IsDir() {
 			return pths, nil
@@ -99,7 +99,7 @@ func (c *taskExec) copyServDirSSH(stpcli *sftp.Client, fs int, pth, root2s strin
 		return err
 	}
 	tpth := filepath.Join(root2s, pth)
-	stpcli.MkdirAll(tpth)
+	stpcli.MkdirAll(utils.RepSeparators(tpth))
 	logrus.Debugf("copyServDir MkdirAll:%s", tpth)
 	for _, v := range fls {
 		pths := filepath.Join(pth, v.Name)
@@ -135,7 +135,7 @@ func (c *taskExec) cprepoFileSSH(stpcli *sftp.Client, fs int, pth, root2s string
 		rpth = filepath.Join(rmtPrefix[0], pth)
 	}
 	flpth := filepath.Join(root2s, pth)
-	stat, err := stpcli.Stat(flpth)
+	stat, err := stpcli.Stat(utils.RepSeparators(flpth))
 	// stat, err := os.Stat(flpth)
 	ln := int64(0)
 	if err == nil {
@@ -153,7 +153,7 @@ func (c *taskExec) cprepoFileSSH(stpcli *sftp.Client, fs int, pth, root2s string
 	}
 	defer flr.Close()
 	logrus.Debugf("cprepofl copy:(%s)%s->%s", c.job.BuildId, rpth, flpth)
-	flw, err := stpcli.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC)
+	flw, err := stpcli.OpenFile(utils.RepSeparators(flpth), os.O_CREATE|os.O_RDWR|os.O_TRUNC)
 	// flw, err := os.OpenFile(flpth, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func (c *taskExec) cprepoFileSSH(stpcli *sftp.Client, fs int, pth, root2s string
 
 func (c *taskExec) chkArtsPathSSH(stpcli *sftp.Client, pth string) (string, os.FileInfo, error) {
 	pths := filepath.Join(c.job.UsersRepo, pth)
-	stat, err := stpcli.Stat(pths)
+	stat, err := stpcli.Stat(utils.RepSeparators(pths))
 	if err != nil {
 		return pths, nil, err
 	}
@@ -229,7 +229,7 @@ func (c *taskExec) uploadflSSH(stpcli *sftp.Client, fs int, dir, pth, flpth stri
 	return err
 }
 func (c *taskExec) uploadFileSSH(stpcli *sftp.Client, fs int, dir, pth, flpth string) error {
-	stat, err := stpcli.Stat(flpth)
+	stat, err := stpcli.Stat(utils.RepSeparators(flpth))
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (c *taskExec) uploadFileSSH(stpcli *sftp.Client, fs int, dir, pth, flpth st
 	if ln > sz {
 		ln = 0
 	}
-	fl, err := stpcli.Open(flpth)
+	fl, err := stpcli.Open(utils.RepSeparators(flpth))
 	if err != nil {
 		return err
 	}

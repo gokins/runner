@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gokins/core/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
@@ -76,7 +77,7 @@ func (c *sshExec) start() (rterr error) {
 
 	c.child = session
 	buf := &bytes.Buffer{}
-	dirs := c.prt.job.UsersRepo
+	dirs := utils.RepSeparators(c.prt.job.UsersRepo)
 	/* if c.prt.job.Input != nil {
 		dirs := c.prt.job.Input["workspace"]
 		if dirs == "" {
