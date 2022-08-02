@@ -46,7 +46,9 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 			}
 			keybts, err := ioutil.ReadFile(keyfl)
 			if err != nil {
-				return nil, err
+				// return nil, err
+				// 没有文件就直接使用key
+				keybts = []byte(keyfl)
 			}
 			pkey, err := ssh.ParsePrivateKey(keybts)
 			if err != nil {
