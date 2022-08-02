@@ -129,23 +129,27 @@ func (c *taskExec) cprepofl(fs int, pth, root2s string, rmtPrefix ...string) err
 			err = fmt.Errorf("ctx end")
 			break
 		}
-		err = c.cprepoFile(fs, pth, root2s, rmtPrefix...)
+		err = c.cprepoFile(i, fs, pth, root2s, rmtPrefix...)
 		if err == nil {
 			break
 		}
 	}
 	return err
 }
-func (c *taskExec) cprepoFile(fs int, pth, root2s string, rmtPrefix ...string) error {
+func (c *taskExec) cprepoFile(idx int, fs int, pth, root2s string, rmtPrefix ...string) error {
 	rpth := pth
 	if len(rmtPrefix) > 0 && rmtPrefix[0] != "" {
 		rpth = filepath.Join(rmtPrefix[0], pth)
 	}
-	flpth := filepath.Join(root2s, pth)
-	stat, err := os.Stat(flpth)
 	ln := int64(0)
-	if err == nil {
-		ln = stat.Size()
+	flpth := filepath.Join(root2s, pth)
+	if idx <= 0 {
+		os.Remove(flpth)
+	} else {
+		stat, err := os.Stat(flpth)
+		if err == nil {
+			ln = stat.Size()
+		}
 	}
 	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, rpth, ln)
 	if err != nil {

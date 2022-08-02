@@ -122,24 +122,27 @@ func (c *taskExec) cprepoflSSH(stpcli *sftp.Client, fs int, pth, root2s string, 
 			err = fmt.Errorf("ctx end")
 			break
 		}
-		err = c.cprepoFileSSH(stpcli, fs, pth, root2s, rmtPrefix...)
+		err = c.cprepoFileSSH(i, stpcli, fs, pth, root2s, rmtPrefix...)
 		if err == nil {
 			break
 		}
 	}
 	return err
 }
-func (c *taskExec) cprepoFileSSH(stpcli *sftp.Client, fs int, pth, root2s string, rmtPrefix ...string) error {
+func (c *taskExec) cprepoFileSSH(idx int, stpcli *sftp.Client, fs int, pth, root2s string, rmtPrefix ...string) error {
 	rpth := pth
 	if len(rmtPrefix) > 0 && rmtPrefix[0] != "" {
 		rpth = filepath.Join(rmtPrefix[0], pth)
 	}
-	flpth := filepath.Join(root2s, pth)
-	stat, err := stpcli.Stat(utils.RepSeparators(flpth))
-	// stat, err := os.Stat(flpth)
 	ln := int64(0)
-	if err == nil {
-		ln = stat.Size()
+	flpth := filepath.Join(root2s, pth)
+	if idx <= 0 {
+		stpcli.Remove(utils.RepSeparators(flpth))
+	} else {
+		stat, err := stpcli.Stat(utils.RepSeparators(flpth))
+		if err == nil {
+			ln = stat.Size()
+		}
 	}
 	sz, flr, err := c.egn.itr.ReadFile(fs, c.job.BuildId, rpth, ln)
 	if err != nil {
