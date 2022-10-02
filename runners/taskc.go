@@ -50,12 +50,18 @@ func (c *taskExec) runProcs() (rterr error) {
 				client: c.sshcli,
 			}
 			err = ex.start()
+			if err != nil {
+				err = fmt.Errorf("ssh exec err:%v", err)
+			}
 		} else {
 			ex := &procExec{
 				prt: c,
 				cmd: v,
 			}
 			err = ex.start()
+			if err != nil {
+				err = fmt.Errorf("cmd exec err:%v", err)
+			}
 		}
 		fs := 2
 		if err != nil {
@@ -72,19 +78,19 @@ func (c *taskExec) runProcs() (rterr error) {
 	}
 	return err
 }
-func (c *taskExec) checkRepo() (rterr error) {
+func (c *taskExec) copyRepo() (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
-			logrus.Warnf("taskExec getArts recover:%v", err)
+			logrus.Warnf("taskExec copyRepo recover:%v", err)
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
-	if c.repocpd {
+	if c.repocpd || c.sshcli != nil {
 		return nil
 	}
 	_, err := os.Stat(c.repopth)
-	logrus.Debugf("taskExec.checkRepo(%s) err:%v", c.repopth, err)
+	logrus.Debugf("taskExec.copyRepo(%s) err:%v", c.repopth, err)
 	if err != nil {
 		return c.copyServDir(1, "/", c.repopth)
 	}

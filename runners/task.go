@@ -78,7 +78,7 @@ func (c *taskExec) run() {
 			c.repocpd = true
 		}
 	}
-	logrus.Debugf("taskExec run job:%s(OriginRepo:%s)", c.job.Name, c.job.OriginRepo)
+	logrus.Debugf("taskExec run job:name=%s, OriginRepo=%s, UsersRepo=%s, repocpd=%v", c.job.Name, c.job.OriginRepo, c.job.UsersRepo, c.repocpd)
 	defer os.RemoveAll(c.wrkpth)
 
 	c.cmdend = false
@@ -206,16 +206,22 @@ func (c *taskExec) runJobs() (rt1 string, rt2 string) {
 		defer scli.Close()
 	}
 
-	err := c.getArts()
+	err := c.copyRepo()
+	if err != nil {
+		return common.BuildStatusError, fmt.Sprintf("copy repo:%v", err)
+	}
+
+	err = c.getArts()
 	if err != nil {
 		return common.BuildStatusError, fmt.Sprintf("use artifacts:%v", err)
 	}
 	err = c.runProcs()
 	if err != nil {
+		logrus.Debugf("runProcs err:%v(%s),isend=%v", err, err.Error(), hbtp.EndContext(c.cmdctx))
 		if hbtp.EndContext(c.cmdctx) {
 			return common.BuildStatusCancel, fmt.Sprintf("cancel success:%v", err)
 		} else {
-			return common.BuildStatusCancel, fmt.Sprintf("run command:%v", err)
+			return common.BuildStatusError, fmt.Sprintf("run command:%v", err)
 		}
 	}
 

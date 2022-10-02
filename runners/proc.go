@@ -82,6 +82,7 @@ func (c *procExec) start() (rterr error) {
 	if c.prt == nil || c.cmd == nil || c.cmd.Conts == "" {
 		return nil
 	}
+	logrus.Debugf("procExec start: cmdCont=%s,repopth=%s!!", c.cmd.Conts, c.prt.repopth)
 	c.ctx, c.cncl = context.WithCancel(c.prt.cmdctx)
 	bins, err := os.Executable()
 	if err != nil {
@@ -205,7 +206,6 @@ func (c *procExec) start() (rterr error) {
 	go func() {
 		cmderr = c.runCmd()
 		// c.killCmd()
-		logrus.Debugf("runCmd end!!!!")
 		atomic.AddInt32(&wtn, -1)
 		time.Sleep(time.Millisecond * 100)
 		c.close()
