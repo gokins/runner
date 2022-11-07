@@ -222,7 +222,7 @@ func (c *taskExec) getArtsFiles(v *runtime.UseArtifact, fs int, rmtPrefix string
 		if err != nil {
 			return err
 		}
-		err = c.copyServDir(2, "/", pths, rmtPrefix)
+		err = c.copyServDir(fs, "/", pths, rmtPrefix)
 		if err != nil {
 			return err
 		}
