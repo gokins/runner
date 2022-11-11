@@ -95,10 +95,10 @@ func (c *taskExec) run() {
 		c.status(common.BuildStatusCancel, "manual stop!!")
 		goto ends
 	}
-	if len(c.job.Commands) <= 0 {
+	/* if len(c.job.Commands) <= 0 {
 		c.status(common.BuildStatusError, "not found any commands")
 		return
-	}
+	} */
 	c.cmdctx, c.cmdcncl = context.WithCancel(c.egn.ctx)
 	c.status(common.BuildStatusRunning, "")
 	c.update()
@@ -197,6 +197,18 @@ func (c *taskExec) runJobs() (rt1 string, rt2 string) {
 		}
 	}()
 
+	if c.job.Step == "gokins@git" {
+		err := c.runProcs()
+		if err != nil {
+			logrus.Debugf("runProcs err:%v(%s),isend=%v", err, err.Error(), hbtp.EndContext(c.cmdctx))
+			if hbtp.EndContext(c.cmdctx) {
+				return common.BuildStatusCancel, fmt.Sprintf("cancel success:%v", err)
+			} else {
+				return common.BuildStatusError, fmt.Sprintf("run command:%v", err)
+			}
+		}
+		return common.BuildStatusOk, ""
+	}
 	if c.job.Step == "shell@ssh" {
 		scli, err := c.connSSH()
 		if err != nil {

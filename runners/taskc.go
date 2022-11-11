@@ -43,7 +43,16 @@ func (c *taskExec) runProcs() (rterr error) {
 		if errs != nil {
 			logrus.Errorf("cmdExec runCmdNext UpdateCmd err:%v", errs)
 		}
-		if c.sshcli != nil {
+		if c.job.Step == "gokins@git" {
+			ex := &gitExec{
+				prt: c,
+				cmd: v,
+			}
+			err = ex.start()
+			if err != nil {
+				err = fmt.Errorf("git exec err:%v", err)
+			}
+		} else if c.sshcli != nil {
 			ex := &sshExec{
 				prt:    c,
 				cmd:    v,
