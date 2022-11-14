@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/gokins/core v0.0.0-20220802013657-abe943553934
+	github.com/gokins/core v0.0.0-20221114063511-e32796e39c37
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.6-0.20221010061341-5cadd93a6fab
 	github.com/pkg/sftp v1.13.5
 	github.com/sirupsen/logrus v1.8.1
