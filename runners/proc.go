@@ -190,6 +190,9 @@ func (c *procExec) start() (rterr error) {
 	}
 	cmd.Env = envs
 	cmd.Dir = c.prt.repopth
+	if strings.HasPrefix(c.prt.job.UsersRepo, "{{RUNNER_REPOPATH}}") {
+		cmd.Dir = strings.ReplaceAll(c.prt.job.UsersRepo, "{{RUNNER_REPOPATH}}", c.prt.repopth)
+	}
 	err = cmd.Start()
 	if err != nil {
 		c.close()

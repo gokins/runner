@@ -71,12 +71,13 @@ func (c *taskExec) run() {
 		}
 	}
 	if c.job.UsersRepo != "" {
-		c.job.UsersRepo = strings.ReplaceAll(c.job.UsersRepo, "${{REPOPATH}}", c.repopth)
-		_, err := os.Stat(c.job.UsersRepo)
-		logrus.Debugf("task(%s) in UsersRepo err:%s,err=%v", c.job.Id, c.job.UsersRepo, err)
-		if err == nil {
-			c.repopth = c.job.UsersRepo
-			c.repocpd = true
+		if !strings.HasPrefix(c.job.UsersRepo, "{{RUNNER_REPOPATH}}") {
+			_, err := os.Stat(c.job.UsersRepo)
+			logrus.Debugf("task(%s) in UsersRepo err:%s,err=%v", c.job.Id, c.job.UsersRepo, err)
+			if err == nil {
+				c.repopth = c.job.UsersRepo
+				c.repocpd = true
+			}
 		}
 	}
 	logrus.Debugf("taskExec run job:name=%s, OriginRepo=%s, UsersRepo=%s, repocpd=%v", c.job.Name, c.job.OriginRepo, c.job.UsersRepo, c.repocpd)
