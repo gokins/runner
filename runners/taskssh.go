@@ -36,6 +36,7 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 		cfg.User = c.job.Input["user"]
 		pass := c.job.Input["pass"]
 		keyfl := c.job.Input["keyFile"]
+		keypass := c.job.Input["keyPass"]
 		if pass != "" {
 			cfg.Auth = []ssh.AuthMethod{
 				ssh.Password(pass),
@@ -51,6 +52,9 @@ func (c *taskExec) connSSH() (cli *ssh.Client, rterr error) {
 				keybts = []byte(keyfl)
 			}
 			pkey, err := ssh.ParsePrivateKey(keybts)
+			if _, ok := err.(*ssh.PassphraseMissingError); ok {
+				pkey, err = ssh.ParsePrivateKeyWithPassphrase(keybts, []byte(keypass))
+			}
 			if err != nil {
 				return nil, err
 			}

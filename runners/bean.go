@@ -19,6 +19,7 @@ type UpdateJobInfo struct {
 }
 type RunJob struct {
 	Id           string
+	PipelineId   string
 	StageId      string
 	BuildId      string
 	StageName    string

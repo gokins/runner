@@ -59,17 +59,16 @@ func (c *Engine) Run(ctx context.Context) error {
 	if len(c.cfg.Plugin) <= 0 {
 		return errors.New("plugins is empty(please see --help)")
 	}
-	pthCahe := filepath.Join(c.cfg.Workspace, common.PathCache)
 	os.RemoveAll(filepath.Join(c.cfg.Workspace, common.PathJobs))
 	os.MkdirAll(c.cfg.Workspace, 0755)
-	os.MkdirAll(pthCahe, 0755)
+	os.MkdirAll(filepath.Join(c.cfg.Workspace, common.PathCache), 0755)
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	logrus.Infof("runner %s start in:%v", c.cfg.Name, c.cfg.Plugin)
 	c.ctx, c.cncl = context.WithCancel(ctx)
 	c.sysEnv = utils.AllEnv()
-	c.sysEnv["GOKINSV_CACHEPATH"] = pthCahe
+	// c.sysEnv["GOKINSV_CACHEPATH"] = pthCahe
 	for !c.Stopd() {
 		c.run()
 		time.Sleep(time.Millisecond * 100)

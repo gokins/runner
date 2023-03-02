@@ -31,8 +31,9 @@ type taskExec struct {
 	bngtm time.Time
 	endtm time.Time
 
+	chepth  string //pipeline缓存目录
 	wrkpth  string //工作地址
-	repopth string //仓库地址
+	repopth string //step.repo地址
 	repocpd bool   //是否不需要copy
 
 	sshcli   *ssh.Client
@@ -60,6 +61,7 @@ func (c *taskExec) run() {
 			logrus.Warnf("Engine stack:%s", string(debug.Stack()))
 		}
 	}()
+	c.chepth = filepath.Join(c.egn.cfg.Workspace, common.PathCache, c.job.PipelineId)
 	c.wrkpth = filepath.Join(c.egn.cfg.Workspace, common.PathJobs, c.job.Id)
 	c.repopth = filepath.Join(c.wrkpth, common.PathRepo)
 	if c.job.OriginRepo != "" {
@@ -181,6 +183,7 @@ func (c *taskExec) initCmdEnv() {
 	}
 	c.cmdenv["WORKPATH"] = c.wrkpth
 	c.cmdenv["REPOPATH"] = c.repopth
+	c.cmdenv["CACHEPATH"] = c.chepth
 }
 func (c *taskExec) runJob() {
 	c.initCmdEnv()

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"runtime/debug"
 	"sync/atomic"
@@ -13,9 +14,12 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	gssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/gokins/core/utils"
 	"github.com/gokins/runner/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 type gitExec struct {
@@ -103,10 +107,13 @@ func (c *gitExec) runCmd() (rterr error) {
 		gopt.URL = c.prt.job.Input["url"]
 		user := c.prt.job.Input["user"]
 		token := c.prt.job.Input["token"]
+		sshkey := c.prt.job.Input["sshkey"]
+		sshkeypaas := c.prt.job.Input["sshkeyPass"]
 		branch := c.prt.job.Input["branch"]
 		shas = c.prt.job.Input["sha"]
 		dir := c.prt.job.Input["directory"]
-		logrus.Debugf("gitExec.runCmd input: user=%s,token=%d,branch=%s,shas=%s,dir=%s",user,len(token),branch,shas,dir)
+		logrus.Debugf("gitExec.runCmd input: user=%s,token=%d,sshkey=%d,sshkeypaas=%d,branch=%s,shas=%s,dir=%s",
+			user, len(token), len(sshkey), len(sshkeypaas), branch, shas, dir)
 		if dir == "" {
 			dir = c.prt.job.Input["dir"]
 		}
@@ -127,6 +134,25 @@ func (c *gitExec) runCmd() (rterr error) {
 					Token: token,
 				}
 			}
+		} else if sshkey != "" {
+			if sshkey == "user_def_file" {
+				sshkey = filepath.Join(utils.HomePath(), ".ssh", "id_rsa")
+			}
+			keybts, err := ioutil.ReadFile(sshkey)
+			if err != nil {
+				// return nil, err
+				// 没有文件就直接使用key
+				keybts = []byte(sshkey)
+			}
+			if user == "" {
+				user = "git"
+			}
+			pk, err := gssh.NewPublicKeys(user, keybts, sshkeypaas)
+			pk.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+			if err != nil {
+				return fmt.Errorf("gssh.NewPublicKeys err:%v", err)
+			}
+			gopt.Auth = pk
 		}
 	}
 	if gopt.URL == "" {
