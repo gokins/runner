@@ -82,6 +82,7 @@ func (c *taskExec) run() {
 			}
 		}
 	}
+	os.MkdirAll(c.chepth, 0755)
 	logrus.Debugf("taskExec run job:name=%s, OriginRepo=%s, UsersRepo=%s, repocpd=%v", c.job.Name, c.job.OriginRepo, c.job.UsersRepo, c.repocpd)
 	defer os.RemoveAll(c.wrkpth)
 
