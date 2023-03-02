@@ -106,6 +106,7 @@ func (c *gitExec) runCmd() (rterr error) {
 		branch := c.prt.job.Input["branch"]
 		shas = c.prt.job.Input["sha"]
 		dir := c.prt.job.Input["directory"]
+		logrus.Debugf("gitExec.runCmd input: user=%s,token=%d,branch=%s,shas=%s,dir=%s",user,len(token),branch,shas,dir)
 		if dir == "" {
 			dir = c.prt.job.Input["dir"]
 		}
