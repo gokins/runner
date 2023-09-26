@@ -102,6 +102,7 @@ func (c *gitExec) runCmd() (rterr error) {
 		SingleBranch: true,
 	}
 	shas := ""
+	branch := ""
 	dirs := c.prt.repopth
 	if c.prt.job.Input != nil {
 		gopt.URL = c.prt.job.Input["url"]
@@ -109,7 +110,7 @@ func (c *gitExec) runCmd() (rterr error) {
 		token := c.prt.job.Input["token"]
 		sshkey := c.prt.job.Input["sshkey"]
 		sshkeypaas := c.prt.job.Input["sshkeyPass"]
-		branch := c.prt.job.Input["branch"]
+		branch = c.prt.job.Input["branch"]
 		shas = c.prt.job.Input["sha"]
 		dir := c.prt.job.Input["directory"]
 		logrus.Debugf("gitExec.runCmd input: user=%s,token=%d,sshkey=%d,sshkeypaas=%d,branch=%s,shas=%s,dir=%s",
@@ -158,7 +159,9 @@ func (c *gitExec) runCmd() (rterr error) {
 	if gopt.URL == "" {
 		return errors.New("git urls is empty")
 	}
-	if shas != "" && !plumbing.IsHash(shas) {
+	if branch != "" {
+		gopt.ReferenceName = plumbing.NewBranchReferenceName(branch)
+	} else if shas != "" && !plumbing.IsHash(shas) {
 		gopt.ReferenceName = plumbing.NewBranchReferenceName(shas)
 	}
 	rpy, err := util.CloneRepo(dirs, gopt, c.ctx)
@@ -175,7 +178,7 @@ func (c *gitExec) runCmd() (rterr error) {
 	return nil
 }
 
-//return false end thread
+// return false end thread
 func (c *gitExec) runReadOut(linebuf *bytes.Buffer) bool {
 	defer func() {
 		if err := recover(); err != nil {
