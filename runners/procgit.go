@@ -167,6 +167,9 @@ func (c *gitExec) runCmd() (rterr error) {
 	} else if shas != "" && !plumbing.IsHash(shas) {
 		gopt.ReferenceName = plumbing.NewBranchReferenceName(shas)
 	}
+	if plumbing.IsHash(shas) {
+		gopt.SingleBranch = false
+	}
 	rpy, err := util.CloneRepo(dirs, gopt, c.ctx)
 	if err != nil {
 		return fmt.Errorf("cloneRepo err:%v", err)
